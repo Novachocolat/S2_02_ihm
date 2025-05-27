@@ -27,11 +27,11 @@ Ce logiciel est utilisé par les plus grandes chaînes de magasins :
 
 ## 📄 Documentation
 
-Pour apprendre à utiliser l'application, rendez-vous ici : [Documentation](https://linktodocumentation)
+Pour apprendre à utiliser l'application, rendez-vous ici : [Documentation](https://github.com/Novachocolat/S2_02_ihm/blob/main/DOC.md)
 
 
 ## ✏️ Rapports
-Pour voir les comptes-rendus des avancements par séance, rendez-vous ici : [Rapports](https://linktodocumentation)
+Pour voir les comptes-rendus des avancements par séance, rendez-vous ici : [Rapports](https://github.com/Novachocolat/S2_02_ihm/blob/main/RAPPORTS.md)
 
 **Lien vers le Trello :** https://trello.com/b/y63bn34v/ihmsae
 ## ⚙️ Fonctionnalités
