@@ -10,6 +10,6 @@ Historique des avancés de projet.
 |:----------:|------------------|-----------------------------------------------|
 | 26/05/2025 | David            | Création du Trello, méthode Scrum, rôles      |
 | 27/05/2025 | David            | Création des docs (README, DOC, RAPPORTS)     |
-
+| 27/05/2025 | David, Lysandre, Noé | Nom du logiciel, wireframe                |
 
 # ⬅️ [Retour](https://github.com/Novachocolat/S2_02_ihm/blob/main/README.md)

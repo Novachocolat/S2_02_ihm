@@ -12,7 +12,8 @@ Présentation et rappel du contexte du projet pour la Situation d'Apprentissage 
 **Équipe n°15 :**
 
 - [David](https://www.github.com/ThFoxY) ![Développeur](https://img.shields.io/badge/Développeur-4BCE97) ![Scrum Master](https://img.shields.io/badge/Scrum%20Master-579DFF) ![Designer UX/UI](https://img.shields.io/badge/Designer%20UX/UI-E774BB) ![Doc](https://img.shields.io/badge/Doc-B3B9C4)
-- [Lysandre](https://www.github.com/Novachocolat) ![Développeur](https://img.shields.io/badge/Développeur-4BCE97)
+- [Lysandre](https://www.github.com/Novachocolat) ![Développeur](https://img.shields.io/badge/Développeur-4BCE97) ![Designer UX/UI](https://img.shields.io/badge/Designer%20UX/UI-E774BB) ![Wireframing](https://img.shields.io/badge/Wireframing-#F5CD47)
+- [Noé](https://github.com/Kiizer861) ![Développeur](https://img.shields.io/badge/Développeur-4BCE97) ![Wireframing](https://img.shields.io/badge/Wireframing-#F5CD47)
 - [Simon](https://github.com/KoshyMVP) ![Développeur](https://img.shields.io/badge/Développeur-4BCE97)
 
 
