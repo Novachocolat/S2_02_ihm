@@ -13,5 +13,6 @@ Historique des avancés de projet.
 | 27/05/2025 | David, Lysandre, Noé | Nom du logiciel, wireframe                |
 | 10/06/2025 | Lysandre         | Création de la page de connexion + Création des différentes pages vierges                |
 | 10/06/2025 | Lysandre         | Début de création de la page admin avec création du magasin lors de la première connexion |
+| 10/06/2025 | Lysandre         | Création d'une page pour créer son magasin quand c'est la première fois que un gérant se connecte |
 
 # ⬅️ [Retour](https://github.com/Novachocolat/S2_02_ihm/blob/main/README.md)
