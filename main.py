@@ -26,13 +26,13 @@ def init_db():
             username TEXT UNIQUE,
             password TEXT,
             role TEXT,
+            shop_id INTEGER,
             first_login INTEGER DEFAULT 1
         )
     ''')
     
     # Ajout d'utilisateurs de test
     c.execute("INSERT OR IGNORE INTO users (username, password, role) VALUES ('gerant', '1234', 'Gérant')")
-    c.execute("INSERT OR IGNORE INTO users (username, password, role) VALUES ('gerant2', 'azer', 'Gérant')")
     c.execute("INSERT OR IGNORE INTO users (username, password, role) VALUES ('employe', 'abcd', 'Employé')")
     conn.commit()
     conn.close()
@@ -230,7 +230,6 @@ class LoginWindow(QWidget):
                     self.create_shop_window = CreateShopWindow(user_id, parent=self)
                     self.create_shop_window.exec()
                     self.open_admin_window()
-                    # Met à jour first_login à 0
                     conn = sqlite3.connect("market_tracer.db")
                     c = conn.cursor()
                     c.execute("UPDATE users SET first_login=0 WHERE username=?", (username,))
@@ -238,6 +237,8 @@ class LoginWindow(QWidget):
                     conn.close()
                 else:
                     self.open_admin_window()
+            elif role == "Employé":
+                self.open_employee_window()
             self.close()
         else:
             self.error_label.setText("Nom d'utilisateur, mot de passe ou rôle incorrect.")
