@@ -51,7 +51,7 @@ class LoginWindow(QWidget):
         main_layout.setContentsMargins(10, 10, 10, 10)
 
         left_frame = QFrame()
-        left_frame.setStyleSheet("background: #f7f7fb;")
+
         left_layout = QVBoxLayout(left_frame)
         left_layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
@@ -64,7 +64,7 @@ class LoginWindow(QWidget):
         # Connexion titre
         title = QLabel("Connexion")
         title.setFont(QFont("Arial", 32, QFont.Weight.Bold))
-        title.setStyleSheet("margin-top: 40px; margin-bottom: 20px; color: #222;")
+        title.setStyleSheet("margin-top: 40px; margin-bottom: 20px;")
         left_layout.addWidget(title, alignment=Qt.AlignmentFlag.AlignHCenter)
 
         # Boutons rôle
@@ -103,7 +103,6 @@ class LoginWindow(QWidget):
         # Nom d'utilisateur
         self.user_label = QLabel("Nom d'utilisateur")
         self.user_label.setFont(QFont("Arial", 10, QFont.Weight.Bold))
-        self.user_label.setStyleSheet("color: #222;")
         self.user_input = QLineEdit()
         self.user_input.setMaximumWidth(310)
         self.user_input.setPlaceholderText("Entrez votre nom d'utilisateur")
@@ -111,7 +110,6 @@ class LoginWindow(QWidget):
         # Mot de passe
         self.pass_label = QLabel("Mot de passe")
         self.pass_label.setFont(QFont("Arial", 10, QFont.Weight.Bold))
-        self.pass_label.setStyleSheet("color: #222;")
         self.pass_input = QLineEdit()
         self.pass_input.setMaximumWidth(310)
         self.pass_input.setPlaceholderText("Entrez votre mot-de-passe")
@@ -173,7 +171,8 @@ class LoginWindow(QWidget):
 
         # Partie droite (image)
         right_frame = QFrame()
-        right_frame.setStyleSheet("background: #f7f7fb;")
+        # SUPPRIMER la ligne suivante pour laisser le background natif :
+        # right_frame.setStyleSheet("background: #f7f7fb;")
         right_frame.setMinimumWidth(300)
         right_layout = QVBoxLayout(right_frame)
         right_layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
