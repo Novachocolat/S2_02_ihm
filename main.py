@@ -13,18 +13,21 @@ from PyQt6.QtCore import Qt
 from adminWindow import AdminWindow
 from employeeWindow import EmployeeWindow
 from customerWindow import CustomerWindow
+from createShopWindow import CreateShopWindow
 # ==============================================================
 
 # Création de la base de données et de la table des utilisateurs
 def init_db():
-    conn = sqlite3.connect("users.db")
+    conn = sqlite3.connect("market_tracer.db")
     c = conn.cursor()
     c.execute('''
         CREATE TABLE IF NOT EXISTS users (
             id INTEGER PRIMARY KEY,
             username TEXT UNIQUE,
             password TEXT,
-            role TEXT
+            role TEXT,
+            shop_id INTEGER,
+            first_login INTEGER DEFAULT 1
         )
     ''')
     
@@ -33,13 +36,14 @@ def init_db():
     c.execute("INSERT OR IGNORE INTO users (username, password, role) VALUES ('employe', 'abcd', 'Employé')")
     conn.commit()
     conn.close()
-
+# ==============================================================
 # Page de connexion
+
 class LoginWindow(QWidget):
     def __init__(self):
         super().__init__()
-        self.setWindowTitle("Market Tracer - Page de connexion")
-        self.setWindowIcon(QIcon("img/logo_v1.png"))
+        self.setWindowTitle("Market Tracer - Connexion")
+        self.setWindowIcon(QIcon("img/chariot.png"))
         self.setFixedSize(800, 600)
         self.selected_role = "Gérant"
         self.rand_banner = rand.randrange(1, 6)
@@ -210,20 +214,39 @@ class LoginWindow(QWidget):
         username = self.user_input.text()
         password = self.pass_input.text()
         role = self.selected_role
-        conn = sqlite3.connect("users.db")
+        conn = sqlite3.connect("market_tracer.db")
         c = conn.cursor()
         c.execute("SELECT * FROM users WHERE username=? AND password=? AND role=?", (username, password, role))
         user = c.fetchone()
         conn.close()
         if user:
-            print(f"Connexion réussie pour {username} avec le rôle {role}.")
-            # Redirection selon le rôle
             if role == "Gérant":
-                self.open_admin_window()
-                self.close()
+                # Vérifie si c'est la première connexion
+                conn = sqlite3.connect("market_tracer.db")
+                c = conn.cursor()
+                c.execute("SELECT first_login FROM users WHERE username=?", (username,))
+                first_login = c.fetchone()[0]
+                conn.close()
+                if first_login:
+                    # Récupère l'id du gérant
+                    conn = sqlite3.connect("market_tracer.db")
+                    c = conn.cursor()
+                    c.execute("SELECT id FROM users WHERE username=?", (username,))
+                    user_id = c.fetchone()[0]
+                    conn.close()
+                    self.create_shop_window = CreateShopWindow(user_id, parent=self)
+                    self.create_shop_window.exec()
+                    self.open_admin_window()
+                    conn = sqlite3.connect("market_tracer.db")
+                    c = conn.cursor()
+                    c.execute("UPDATE users SET first_login=0 WHERE username=?", (username,))
+                    conn.commit()
+                    conn.close()
+                else:
+                    self.open_admin_window()
             elif role == "Employé":
-                self.open_employee_window() 
-                self.close()
+                self.open_employee_window()
+            self.close()
         else:
             self.error_label.setText("Nom d'utilisateur, mot de passe ou rôle incorrect.")
 
@@ -237,7 +260,13 @@ class LoginWindow(QWidget):
         self.client_window.show()
 
     def open_admin_window(self):
-        self.admin_window = AdminWindow()
+        # Récupère l'id du gérant connecté
+        conn = sqlite3.connect("market_tracer.db")
+        c = conn.cursor()
+        c.execute("SELECT id FROM users WHERE username=?", (self.user_input.text(),))
+        user_id = c.fetchone()[0]
+        conn.close()
+        self.admin_window = AdminWindow(user_id)
         self.admin_window.show()
     
     def open_employee_window(self):
