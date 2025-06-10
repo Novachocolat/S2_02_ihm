@@ -140,6 +140,7 @@ class LoginWindow(QWidget):
             }
         """)
         self.login_btn.clicked.connect(self.try_login)
+        self.pass_input.returnPressed.connect(self.try_login)
         left_layout.addWidget(self.login_btn)
         self.enter_btn = QPushButton("Ouvrir une session")
         self.enter_btn.setStyleSheet("""
@@ -178,7 +179,7 @@ class LoginWindow(QWidget):
         right_layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
         img_label = QLabel()
         pixmap = QPixmap("img/mt_banner_" + str(self.rand_banner) + ".png")
-        pixmap = pixmap.scaled(300, 600, Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation)
+        pixmap = pixmap.scaled(300, 580, Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation)
         img_label.setPixmap(pixmap)
         img_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         right_layout.addWidget(img_label)
