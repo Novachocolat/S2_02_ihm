@@ -16,7 +16,7 @@ import json
 class AdminWindow(QWidget):
     def __init__(self):
         super().__init__()
-        self.setWindowTitle("Market Tracer - Admin")
+        self.setWindowTitle("Market Tracer - Employé")
         self.setWindowIcon(QIcon("img/chariot.png"))
         self.resize(1400, 900) 
         self.setMinimumSize(1000, 700)
