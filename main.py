@@ -18,7 +18,7 @@ from createShopWindow import CreateShopWindow
 
 # Création de la base de données et de la table des utilisateurs
 def init_db():
-    conn = sqlite3.connect("users.db")
+    conn = sqlite3.connect("market_tracer.db")
     c = conn.cursor()
     c.execute('''
         CREATE TABLE IF NOT EXISTS users (
@@ -32,6 +32,7 @@ def init_db():
     
     # Ajout d'utilisateurs de test
     c.execute("INSERT OR IGNORE INTO users (username, password, role) VALUES ('gerant', '1234', 'Gérant')")
+    c.execute("INSERT OR IGNORE INTO users (username, password, role) VALUES ('gerant2', 'azer', 'Gérant')")
     c.execute("INSERT OR IGNORE INTO users (username, password, role) VALUES ('employe', 'abcd', 'Employé')")
     conn.commit()
     conn.close()
@@ -206,7 +207,7 @@ class LoginWindow(QWidget):
         username = self.user_input.text()
         password = self.pass_input.text()
         role = self.selected_role
-        conn = sqlite3.connect("users.db")
+        conn = sqlite3.connect("market_tracer.db")
         c = conn.cursor()
         c.execute("SELECT * FROM users WHERE username=? AND password=? AND role=?", (username, password, role))
         user = c.fetchone()
@@ -214,24 +215,29 @@ class LoginWindow(QWidget):
         if user:
             if role == "Gérant":
                 # Vérifie si c'est la première connexion
-                conn = sqlite3.connect("users.db")
+                conn = sqlite3.connect("market_tracer.db")
                 c = conn.cursor()
                 c.execute("SELECT first_login FROM users WHERE username=?", (username,))
                 first_login = c.fetchone()[0]
                 conn.close()
                 if first_login:
-                    # Affiche la fenêtre de création de projet
-                    self.create_shop_window = CreateShopWindow(self.open_admin_window)
-                    self.create_shop_window.show()
+                    # Récupère l'id du gérant
+                    conn = sqlite3.connect("market_tracer.db")
+                    c = conn.cursor()
+                    c.execute("SELECT id FROM users WHERE username=?", (username,))
+                    user_id = c.fetchone()[0]
+                    conn.close()
+                    self.create_shop_window = CreateShopWindow(user_id, parent=self)
+                    self.create_shop_window.exec()
+                    self.open_admin_window()
                     # Met à jour first_login à 0
-                    conn = sqlite3.connect("users.db")
+                    conn = sqlite3.connect("market_tracer.db")
                     c = conn.cursor()
                     c.execute("UPDATE users SET first_login=0 WHERE username=?", (username,))
                     conn.commit()
                     conn.close()
                 else:
                     self.open_admin_window()
-            # ...autres rôles...
             self.close()
         else:
             self.error_label.setText("Nom d'utilisateur, mot de passe ou rôle incorrect.")
@@ -246,7 +252,13 @@ class LoginWindow(QWidget):
         self.client_window.show()
 
     def open_admin_window(self):
-        self.admin_window = AdminWindow()
+        # Récupère l'id du gérant connecté
+        conn = sqlite3.connect("market_tracer.db")
+        c = conn.cursor()
+        c.execute("SELECT id FROM users WHERE username=?", (self.user_input.text(),))
+        user_id = c.fetchone()[0]
+        conn.close()
+        self.admin_window = AdminWindow(user_id)
         self.admin_window.show()
     
     def open_employee_window(self):

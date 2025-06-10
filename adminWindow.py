@@ -4,18 +4,57 @@
 # Importations
 from PyQt6.QtWidgets import (
     QApplication, QWidget, QLabel, QVBoxLayout, QHBoxLayout, QFrame, QPushButton, QListWidget,
-    QLineEdit, QCheckBox, QSpinBox, QGroupBox, QGridLayout, QMenuBar, QMenu, QFileDialog, QComboBox
+    QLineEdit, QCheckBox, QSpinBox, QGroupBox, QGridLayout, QMenuBar, QMenu, QFileDialog, QComboBox,
+    QDialog, QFormLayout, QDialogButtonBox, QMessageBox
 )
 from PyQt6.QtGui import QFont, QIcon
 from PyQt6.QtCore import Qt
 import sys
 import json
+import sqlite3
 # ==============================================================
-# Page d'administration
+# Fenêtre d'ajout d'article
+
+class AddArticleDialog(QDialog):
+    def __init__(self, categories, parent=None):
+        super().__init__(parent)
+        self.setWindowTitle("Ajouter un article")
+        self.setWindowIcon(QIcon("img/chariot.png"))
+        self.setStyleSheet("background: #eee; color: #222; font-size: 12px;")
+        self.setMinimumWidth(300)
+        layout = QFormLayout(self)
+
+        self.nom_input = QLineEdit()
+        self.nom_input.setStyleSheet("color: #222; background: #fff;") 
+        layout.addRow("Nom de l'article :", self.nom_input)
+
+        self.categorie_combo = QComboBox()
+        self.categorie_combo.addItems(sorted(categories) if categories else [])
+        self.categorie_combo.setStyleSheet("color: #222; background: #fff;") 
+        layout.addRow("Catégorie :", self.categorie_combo)
+
+        for i in range(layout.rowCount()):
+            label = layout.itemAt(i, QFormLayout.ItemRole.LabelRole)
+            if label and label.widget():
+                label.widget().setStyleSheet("color: #222; background: transparent;")
+
+        buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel)
+        buttons.setStyleSheet("color: #222; background: #ddd;")
+        buttons.accepted.connect(self.accept)
+        buttons.rejected.connect(self.reject)
+        layout.addWidget(buttons)
+
+        self.setLayout(layout)
+
+    def get_data(self):
+        return self.nom_input.text(), self.categorie_combo.currentText()
+# ==============================================================
+# Fenêtre principale du gérant
 
 class AdminWindow(QWidget):
-    def __init__(self):
+    def __init__(self, user_id):
         super().__init__()
+        self.user_id = user_id
         self.setWindowTitle("Market Tracer - Admin")
         self.setWindowIcon(QIcon("img/chariot.png"))
         self.resize(1400, 900) 
@@ -45,15 +84,11 @@ class AdminWindow(QWidget):
         fichier_menu.addAction("Fermer")
         fichier_menu.addAction("Exporter")
 
-        # Stock
-        stock_menu = menubar.addMenu("Stock")
-        stock_menu.addAction("Ajouter")
-        stock_menu.addAction("Retirer")
-        stock_menu.addAction("Importer")
-
         # Gestion
         gestion_menu = menubar.addMenu("Gestion")
-        gestion_menu.addAction("Modifier mon magasin")
+        action_modifier_magasin = gestion_menu.addAction("Modifier mon magasin")
+        action_modifier_magasin.triggered.connect(self.ouvrir_modifier_magasin)
+
         gestion_menu.addAction("Créer un employé")
         gestion_menu.addAction("Modifier un employé")
         gestion_menu.addAction("Supprimer un employé")
@@ -86,26 +121,13 @@ class AdminWindow(QWidget):
         left_col = QVBoxLayout()
         left_col.setSpacing(10)
 
-        # Produits disponibles
-        prod_label = QLabel("Produits disponibles")
-        prod_label.setFont(QFont("Arial", 12, QFont.Weight.Bold))
-        prod_label.setStyleSheet("color: #222;")
-        left_col.addWidget(prod_label)
-
-        # Saisir produit
-        saisir_label = QLabel("Saisissez un produit")
-        saisir_label.setFont(QFont("Arial", 10))
-        saisir_label.setStyleSheet("color: #222;")
-        left_col.addWidget(saisir_label)
-        saisir_input = QLineEdit()
-        saisir_input.setStyleSheet("color: #222; background: #fff;")
-        left_col.addWidget(saisir_input)
-
         # Boutons stock
         btn_ajouter = QPushButton("Ajouter à mon stock")
         btn_ajouter.setStyleSheet("background: #4be39a; color: #222; font-weight: bold; min-height: 32px;")
+        btn_ajouter.clicked.connect(self.ouvrir_dialog_ajout_article)
         btn_retirer = QPushButton("Retirer de mon stock")
         btn_retirer.setStyleSheet("background: #ff3c2f; color: #222; font-weight: bold; min-height: 32px;")
+        btn_retirer.clicked.connect(self.retirer_article_selectionne)
         left_col.addWidget(btn_ajouter)
         left_col.addWidget(btn_retirer)
 
@@ -130,12 +152,12 @@ class AdminWindow(QWidget):
 
         self.stocks_list = QListWidget()
         self.stocks_list.setStyleSheet("background: #ededed; color: #222; font-size: 15px;")
-        left_col.addWidget(self.stocks_list)
+        left_col.addWidget(self.stocks_list, stretch=1)  # Ajoute stretch ici
 
         self.stocks_list.itemClicked.connect(self.afficher_details_produit)
-        self.produit_categorie_map = {}  
+        self.produit_categorie_map = {}
 
-        left_col.addStretch()
+        left_col.addStretch()  # Laisse ce stretch après la liste
         left_frame = QFrame()
         left_frame.setLayout(left_col)
         left_frame.setMinimumWidth(240)
@@ -247,6 +269,17 @@ class AdminWindow(QWidget):
         self.status_bar.setAlignment(Qt.AlignmentFlag.AlignLeft)
         main_layout.addWidget(self.status_bar)
 
+        # Récupérer le magasin du gérant
+        conn = sqlite3.connect("market_tracer.db")
+        c = conn.cursor()
+        c.execute("SELECT articles_json FROM shops WHERE user_id=?", (self.user_id,))
+        result = c.fetchone()
+        conn.close()
+        if result and result[0]:
+            self.afficher_stocks_depuis_json(result[0])
+        else:
+            self.status_bar.setText("Aucun fichier d'articles associé à ce magasin.")
+
     def ouvrir_fichier_json(self):
         file_dialog = QFileDialog(self)
         file_dialog.setNameFilter("Fichiers JSON (*.json)")
@@ -304,6 +337,125 @@ class AdminWindow(QWidget):
         self.login_window = LoginWindow()
         self.login_window.show()
 
+    def recuperer_magasins(self, user_id):
+        """Exemple pour récupérer les magasins du gérant connecté (dans AdminWindow ou ailleurs)"""
+        conn = sqlite3.connect("market_tracer.db")
+        c = conn.cursor()
+        c.execute("SELECT * FROM shops WHERE user_id=?", (user_id,))
+        shops = c.fetchall()
+        conn.close()
+        return shops
+
+    def ouvrir_dialog_ajout_article(self):
+        dialog = AddArticleDialog(self.categories, self)
+        if dialog.exec():
+            nom, categorie = dialog.get_data()
+            if nom and categorie:
+                # Ajoute l'article à la liste et à la map interne
+                self.stocks_list.addItem(nom)
+                self.produit_categorie_map[nom] = categorie
+                self.categories.add(categorie)
+                self.status_bar.setText(f"Article '{nom}' ajouté à la catégorie '{categorie}'.")
+                self.filtre_combo.blockSignals(True)
+                self.filtre_combo.clear()
+                self.filtre_combo.addItem("Toutes les catégories")
+                for cat in sorted(self.categories):
+                    self.filtre_combo.addItem(cat)
+                self.filtre_combo.blockSignals(False)
+
+                # Récupère le chemin du fichier JSON associé au magasin
+                conn = sqlite3.connect("market_tracer.db")
+                c = conn.cursor()
+                c.execute("SELECT articles_json FROM shops WHERE user_id=?", (self.user_id,))
+                result = c.fetchone()
+                conn.close()
+                if result and result[0]:
+                    chemin_json = result[0]
+                    # Ajoute l'article au fichier JSON
+                    try:
+                        with open(chemin_json, "r", encoding="utf-8") as f:
+                            data = json.load(f)
+                    except Exception:
+                        data = {}
+                    if categorie not in data:
+                        data[categorie] = []
+                    if nom not in data[categorie]:
+                        data[categorie].append(nom)
+                    with open(chemin_json, "w", encoding="utf-8") as f:
+                        json.dump(data, f, ensure_ascii=False, indent=2)
+
+            else:
+                QMessageBox.warning(self, "Erreur", "Veuillez remplir tous les champs.")
+
+    def retirer_article_selectionne(self):
+        item = self.stocks_list.currentItem()
+        if not item:
+            QMessageBox.warning(self, "Aucun article sélectionné", "Veuillez sélectionner un article à retirer.")
+            return
+        nom = item.text()
+        msg_box = QMessageBox(self)
+        msg_box.setWindowTitle("Confirmation")
+        msg_box.setText(f"Voulez-vous vraiment retirer l'article '{nom}' du stock ?")
+        msg_box.setIcon(QMessageBox.Icon.Question)
+        msg_box.setStandardButtons(QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No)
+        msg_box.setStyleSheet("""
+            QLabel { color: #222; }
+            QPushButton { color: #222; }
+            QMessageBox { background: #fff; }
+        """)
+        reply = msg_box.exec()
+        if reply == QMessageBox.StandardButton.Yes:
+            # Retire de la liste interne
+            categorie = self.produit_categorie_map.get(nom)
+            if categorie and nom in self.produit_categorie_map:
+                del self.produit_categorie_map[nom]
+            self.stocks_list.takeItem(self.stocks_list.row(item))
+            # Mise à jour du JSON
+            conn = sqlite3.connect("market_tracer.db")
+            c = conn.cursor()
+            c.execute("SELECT articles_json FROM shops WHERE user_id=?", (self.user_id,))
+            result = c.fetchone()
+            conn.close()
+            if result and result[0]:
+                chemin_json = result[0]
+                try:
+                    with open(chemin_json, "r", encoding="utf-8") as f:
+                        data = json.load(f)
+                except Exception:
+                    data = {}
+                # Retrait de l'article
+                if categorie in data and nom in data[categorie]:
+                    data[categorie].remove(nom)
+                    if not data[categorie]:
+                        del data[categorie]
+                with open(chemin_json, "w", encoding="utf-8") as f:
+                    json.dump(data, f, ensure_ascii=False, indent=2)
+                self.afficher_stocks_depuis_json(chemin_json)
+            self.status_bar.setText(f"Article '{nom}' retiré du stock.")
+
+    def ouvrir_modifier_magasin(self):
+        from createShopWindow import CreateShopWindow
+        # Récupère les infos du magasin
+        conn = sqlite3.connect("market_tracer.db")
+        c = conn.cursor()
+        c.execute("SELECT nom, auteur, date_creation, apropos, chemin, articles_json FROM shops WHERE user_id=?", (self.user_id,))
+        row = c.fetchone()
+        conn.close()
+        shop_data = None
+        if row:
+            shop_data = {
+                "nom": row[0],
+                "auteur": row[1],
+                "date_creation": row[2],
+                "apropos": row[3],
+                "chemin": row[4],
+                "articles_json": row[5]
+            }
+        dialog = CreateShopWindow(self.user_id, self, shop_data)
+        if dialog.exec():
+            self.status_bar.setText("Magasin modifié avec succès.")
+            # Mettre à jour les stocks si nécessaire
+            self.afficher_stocks_depuis_json(dialog.json_input.text())
 
 # ==============================================================
 # Lancement de l'application
