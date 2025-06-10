@@ -11,7 +11,9 @@ Historique des avancés de projet.
 | 26/05/2025 | David            | Création du Trello, méthode Scrum, rôles      |
 | 27/05/2025 | David            | Création des docs (README, DOC, RAPPORTS)     |
 | 27/05/2025 | David, Lysandre, Noé | Nom du logiciel, wireframe                |
-| 10/06/2025 | Lysandre         | Création de la page de connexion + Création des différentes pages vierges                |
-| 10/06/2025 | Lysandre         | Début de création de la page admin avec création du magasin lors de la première connexion |
+| 10/06/2025 | Lysandre         | Création de la page de connexion et vues vierges                |
+| 10/06/2025 | Lysandre         | Début de création de la page Administrateur : création du magasin lors de la première connexion |
+| 10/06/2025 | David, Simon           | Logos et bannières                      |
+| 10/06/2025 | David                  | Intégration des bannières dans la page de connexion |
 
 # ⬅️ [Retour](https://github.com/Novachocolat/S2_02_ihm/blob/main/README.md)

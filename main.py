@@ -2,13 +2,13 @@
 # Market Tracer - Page de connexion
 # ==============================================================
 # Importations
-import sys
+import sys, random as rand
 import sqlite3
 from PyQt6.QtWidgets import (
     QApplication, QWidget, QLabel, QLineEdit, QPushButton, QHBoxLayout,
     QVBoxLayout, QGridLayout, QFrame
 )
-from PyQt6.QtGui import QFont, QIcon
+from PyQt6.QtGui import QFont, QIcon, QPixmap
 from PyQt6.QtCore import Qt
 from adminWindow import AdminWindow
 from employeeWindow import EmployeeWindow
@@ -38,18 +38,18 @@ def init_db():
 class LoginWindow(QWidget):
     def __init__(self):
         super().__init__()
-        self.setWindowTitle("Market Tracer")
-        self.setWindowIcon(QIcon("img/chariot.png"))
+        self.setWindowTitle("Market Tracer - Page de connexion")
+        self.setWindowIcon(QIcon("img/logo_v1.png"))
         self.setFixedSize(800, 600)
         self.selected_role = "Gérant"
+        self.rand_banner = rand.randrange(1, 6)
         self.setup_ui()
 
     def setup_ui(self):
         # Layout principal horizontal
         main_layout = QHBoxLayout(self)
-        main_layout.setContentsMargins(0, 0, 0, 0)
+        main_layout.setContentsMargins(10, 10, 10, 10)
 
-        # Partie gauche (formulaire)
         left_frame = QFrame()
         left_frame.setStyleSheet("background: #f7f7fb;")
         left_layout = QVBoxLayout(left_frame)
@@ -73,6 +73,7 @@ class LoginWindow(QWidget):
         for role in ["Gérant", "Employé", "Client"]:
             btn = QPushButton(role)
             btn.setCheckable(True)
+            btn.setMaximumWidth(110)
             btn.setStyleSheet("""
                 QPushButton {
                     background: #4be39a;
@@ -92,7 +93,8 @@ class LoginWindow(QWidget):
             self.role_buttons[role] = btn
             role_layout.addWidget(btn)
         self.role_buttons["Gérant"].setChecked(True)
-        left_layout.addLayout(role_layout)
+        left_layout.addLayout(role_layout, stretch=0)
+        left_layout.setAlignment(role_layout, Qt.AlignmentFlag.AlignHCenter)
         left_layout.addSpacing(20)
 
         # Formulaire
@@ -103,6 +105,7 @@ class LoginWindow(QWidget):
         self.user_label.setFont(QFont("Arial", 10, QFont.Weight.Bold))
         self.user_label.setStyleSheet("color: #222;")
         self.user_input = QLineEdit()
+        self.user_input.setMaximumWidth(310)
         self.user_input.setPlaceholderText("Entrez votre nom d'utilisateur")
         self.user_input.setStyleSheet("background: #bdbdbd; border-radius: 4px; padding: 6px; color: #222;")
         # Mot de passe
@@ -110,6 +113,7 @@ class LoginWindow(QWidget):
         self.pass_label.setFont(QFont("Arial", 10, QFont.Weight.Bold))
         self.pass_label.setStyleSheet("color: #222;")
         self.pass_input = QLineEdit()
+        self.pass_input.setMaximumWidth(310)
         self.pass_input.setPlaceholderText("Entrez votre mot-de-passe")
         self.pass_input.setEchoMode(QLineEdit.EchoMode.Password)
         self.pass_input.setStyleSheet("background: #bdbdbd; border-radius: 4px; padding: 6px; color: #222;")
@@ -122,7 +126,7 @@ class LoginWindow(QWidget):
         left_layout.addSpacing(20)
 
         # Bouton connexion
-        self.login_btn = QPushButton("Connexion")
+        self.login_btn = QPushButton("Se connecter")
         self.login_btn.setStyleSheet("""
             QPushButton {
                 background: #bdbdbd;
@@ -137,17 +141,17 @@ class LoginWindow(QWidget):
         """)
         self.login_btn.clicked.connect(self.try_login)
         left_layout.addWidget(self.login_btn)
-        self.enter_btn = QPushButton("Entrer")
+        self.enter_btn = QPushButton("Ouvrir une session")
         self.enter_btn.setStyleSheet("""
             QPushButton {
-                background: #4be39a;
+                background: #bdbdbd;
                 color: #222;
                 border-radius: 4px;
                 min-height: 36px;
                 font-size: 18px;
             }
             QPushButton:pressed {
-                background: #2fa76a;
+                background: #888;
             }
         """)
         self.enter_btn.clicked.connect(self.enter_as_client)
@@ -161,19 +165,22 @@ class LoginWindow(QWidget):
         left_layout.addWidget(self.error_label, alignment=Qt.AlignmentFlag.AlignHCenter)
 
         # Footer
-        footer = QLabel("Powered by Place Holder")
+        footer= QLabel("Powered by Place Holder")
         footer.setStyleSheet("color: #888; font-size: 12px; margin-top: 40px;")
-        left_layout.addWidget(footer, alignment=Qt.AlignmentFlag.AlignRight)
+        footer.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        left_layout.addWidget(footer)
 
         # Partie droite (image)
         right_frame = QFrame()
-        right_frame.setStyleSheet("background: #888;")
+        right_frame.setStyleSheet("background: #f7f7fb;")
         right_frame.setMinimumWidth(300)
         right_layout = QVBoxLayout(right_frame)
         right_layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        img_label = QLabel("IMAGE")
-        img_label.setFont(QFont("Arial", 24, QFont.Weight.Bold))
-        img_label.setStyleSheet("color: #222;")
+        img_label = QLabel()
+        pixmap = QPixmap("img/mt_banner_" + str(self.rand_banner) + ".png")
+        pixmap = pixmap.scaled(300, 600, Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation)
+        img_label.setPixmap(pixmap)
+        img_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         right_layout.addWidget(img_label)
 
         # Ajout au layout principal
