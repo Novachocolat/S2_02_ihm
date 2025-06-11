@@ -7,7 +7,7 @@ from PyQt6.QtWidgets import (
     QApplication, QMainWindow, QFileDialog, QGraphicsView,
     QGraphicsScene, QGraphicsPixmapItem, QVBoxLayout,
     QWidget, QSlider, QPushButton, QHBoxLayout, QGroupBox,
-    QMessageBox, QListWidget, QListWidgetItem
+    QMessageBox, QListWidget, QListWidgetItem, QLabel 
 )
 from PyQt6.QtGui import QDrag, QPixmap, QFont, QBrush, QPen, QColor
 from PyQt6.QtCore import QMimeData, Qt, QRectF
@@ -110,7 +110,7 @@ class GridOverlay(QGraphicsView):
 
             if (row, col) in self.objects_in_cells:
                 obj = self.objects_in_cells[(row, col)]
-                emoji = self.emoji_mapping.get(obj, "❌")
+                emoji = self.emoji_mapping.get(obj, "")
                 text_item = self.scene.addText(emoji)
                 font = QFont()
                 font.setPointSize(int(self.grid_size * 0.6))
@@ -394,20 +394,43 @@ class MainWindow(QMainWindow):
         main_layout.addWidget(self.grid_view)
 
         # Slider taille de la grille
+        grid_layout = QVBoxLayout()
+
         self.slider = QSlider(Qt.Orientation.Vertical)
         self.slider.setMinimum(25)
         self.slider.setMaximum(100)
         self.slider.setValue(50)
-        self.slider.valueChanged.connect(self.grid_view.set_grid_size)
-        main_layout.addWidget(self.slider)
+        self.slider.valueChanged.connect(self.on_grid_size_changed)
+
+        self.grid_label = QLabel(f"Grille: {self.slider.value()} px")
+        self.grid_label.setAlignment(Qt.AlignmentFlag.AlignHCenter)
+
+        grid_layout.addWidget(self.slider)
+        grid_layout.addWidget(self.grid_label)
+
+        grid_group = QWidget()
+        grid_group.setLayout(grid_layout)
+        main_layout.addWidget(grid_group)
+
 
         # Slider pour le zoom global
+        zoom_layout = QVBoxLayout()
+
         self.zoom_slider = QSlider(Qt.Orientation.Vertical)
         self.zoom_slider.setMinimum(10)
         self.zoom_slider.setMaximum(300)
         self.zoom_slider.setValue(100)
         self.zoom_slider.valueChanged.connect(self.on_zoom_changed)
-        main_layout.addWidget(self.zoom_slider)
+
+        self.zoom_label = QLabel("100%")
+        self.zoom_label.setAlignment(Qt.AlignmentFlag.AlignHCenter)
+
+        zoom_layout.addWidget(self.zoom_slider)
+        zoom_layout.addWidget(self.zoom_label)
+
+        zoom_group = QWidget()
+        zoom_group.setLayout(zoom_layout)
+        main_layout.addWidget(zoom_group)
 
         container = QWidget()
         container.setLayout(main_layout)
@@ -421,17 +444,23 @@ class MainWindow(QMainWindow):
     def set_paint_mode(self, color_type):
         self.grid_view.set_pan_mode(False)
         self.grid_view.set_current_color(color_type)
+        
+    # Gère le changement de taille de la grille
+    def on_grid_size_changed(self, value):
+        self.grid_view.set_grid_size(value)
+        self.grid_label.setText(f"Grille: {value} px")
 
     # Gère le zoom
     def on_zoom_changed(self, value):
         factor = value / 100.0
         self.grid_view.set_zoom(factor)
-
+        self.zoom_label.setText(f"{value}%")
     # Ouvrir une image
     def open_image(self):
         file_name, _ = QFileDialog.getOpenFileName(self, "Choisir une image", "", "Images (*.png *.jpg *.bmp *.jpeg)")
         if file_name:
             self.grid_view.load_image(file_name)
+            self.zoom_slider.setValue(50)  # Ouvre à 50%
 
     #Confirme la réinitialisation
     def confirm_reset(self):
