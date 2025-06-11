@@ -11,7 +11,7 @@ import sys, random as rand
 import sqlite3
 from PyQt6.QtWidgets import (
     QApplication, QWidget, QLabel, QLineEdit, QPushButton, QHBoxLayout,
-    QVBoxLayout, QGridLayout, QFrame
+    QVBoxLayout, QGridLayout, QFrame, QMessageBox
 )
 from PyQt6.QtGui import QFont, QIcon, QPixmap
 from PyQt6.QtCore import Qt
@@ -223,37 +223,43 @@ class LoginWindow(QWidget):
         c = conn.cursor()
         c.execute("SELECT * FROM users WHERE username=? AND password=? AND role=?", (username, password, role))
         user = c.fetchone()
-        conn.close()
         if user:
             if role == "Gérant":
-                # Vérifie si c'est la première connexion
-                conn = sqlite3.connect("market_tracer.db")
-                c = conn.cursor()
                 c.execute("SELECT first_login FROM users WHERE username=?", (username,))
                 first_login = c.fetchone()[0]
-                conn.close()
                 if first_login:
-                    # Récupère l'id du gérant
-                    conn = sqlite3.connect("market_tracer.db")
-                    c = conn.cursor()
                     c.execute("SELECT id FROM users WHERE username=?", (username,))
                     user_id = c.fetchone()[0]
-                    conn.close()
                     self.create_shop_window = CreateShopWindow(user_id, parent=self)
                     self.create_shop_window.exec()
                     self.open_admin_window()
-                    conn = sqlite3.connect("market_tracer.db")
-                    c = conn.cursor()
                     c.execute("UPDATE users SET first_login=0 WHERE username=?", (username,))
                     conn.commit()
-                    conn.close()
                 else:
                     self.open_admin_window()
             elif role == "Employé":
-                self.open_employee_window()
+                print(f"[Login] Connexion employé : {username}")
+                # Récupère le shop_id de l'employé
+                c.execute("SELECT shop_id FROM users WHERE username=?", (username,))
+                shop_row = c.fetchone()
+                if shop_row and shop_row[0]:
+                    shop_id = shop_row[0]
+                    # Récupère les infos du magasin
+                    c.execute("SELECT articles_json, chemin FROM shops WHERE id=?", (shop_id,))
+                    shop_info = c.fetchone()
+                    if shop_info:
+                        articles_json, plan_path = shop_info
+                        self.employee_window = EmployeeWindow(articles_json, plan_path)
+                        self.employee_window.show()
+                        self.close()
+                    else:
+                        QMessageBox.warning(self, "Erreur", "Aucun magasin associé à ce compte employé.")
+                else:
+                    QMessageBox.warning(self, "Erreur", "Aucun magasin associé à ce compte employé.")
             self.close()
         else:
             self.error_label.setText("Nom d'utilisateur, mot de passe ou rôle incorrect.")
+        conn.close()
 
     def enter_as_client(self):
         print("Entrée en tant que client.")

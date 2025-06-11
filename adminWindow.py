@@ -9,10 +9,9 @@
 # Importations
 from PyQt6.QtWidgets import (
     QApplication, QWidget, QLabel, QVBoxLayout, QHBoxLayout, QFrame, QPushButton, QListWidget,
-    QLineEdit, QCheckBox, QSpinBox, QGroupBox, QMenuBar, QComboBox,
-    QDialog, QFormLayout, QDialogButtonBox, QMessageBox, QFileDialog
+    QLineEdit, QCheckBox, QGroupBox, QMenuBar, QComboBox, QMessageBox, QFileDialog
 )
-from PyQt6.QtGui import QFont, QIcon
+from PyQt6.QtGui import QFont, QIcon, QGuiApplication
 from PyQt6.QtCore import Qt
 import sys
 import json
@@ -31,21 +30,29 @@ from employeeManagerDialog import EmployeeManagerDialog
 class AdminWindow(QWidget):
     def __init__(self, user_id):
         super().__init__()
+        print("[AdminWindow] Initialisation de la fenêtre admin")
         self.user_id = user_id
         self.setWindowTitle("Market Tracer - Admin")
         self.setWindowIcon(QIcon("img/chariot.png"))
-        self.resize(1400, 900) 
-        self.setMinimumSize(1000, 700)
+
+        # Taille dynamique
+        screen = QGuiApplication.primaryScreen().geometry()
+        self.resize(int(screen.width() * 0.9), int(screen.height() * 0.9))
+        self.setMinimumSize(int(screen.width() * 0.7), int(screen.height() * 0.7))
+        self.showMaximized()
+
         self.setup_ui()
 
     # Initialise l'interface principale
     def setup_ui(self):
+        print("[AdminWindow] Construction de l'UI")
         main_layout = QVBoxLayout(self)
         main_layout.setContentsMargins(5, 5, 5, 5)
         main_layout.setSpacing(0)
 
         # Menu déroulant
         menubar = QMenuBar()
+        print("[AdminWindow] Ajout de la barre de menus")
 
         # Fichier
         fichier_menu = menubar.addMenu("Fichier")
@@ -81,6 +88,7 @@ class AdminWindow(QWidget):
         menubar.setCornerWidget(btn_deconnexion, Qt.Corner.TopRightCorner)
 
         main_layout.addWidget(menubar)
+        print("[AdminWindow] Barre de menus ajoutée")
 
         # === Barre horizontale sous la barre de menus ===
         hline_menu = QFrame()
@@ -274,27 +282,33 @@ class AdminWindow(QWidget):
         main_layout.addWidget(self.status_bar)
 
         # Récupérer le magasin du gérant
+        print("[AdminWindow] Récupération des articles du magasin")
         conn = sqlite3.connect("market_tracer.db")
         c = conn.cursor()
         c.execute("SELECT articles_json FROM shops WHERE user_id=?", (self.user_id,))
         result = c.fetchone()
         conn.close()
         if result and result[0]:
+            print("[AdminWindow] Articles trouvés, chargement...")
             self.afficher_stocks_depuis_json(result[0])
         else:
+            print("[AdminWindow] Aucun article associé à ce magasin.")
             self.status_bar.setText("Aucun article associé à ce magasin.")
 
     # Ouvre un fichier JSON et charge les articles
     def ouvrir_fichier_json(self):
+        print("[AdminWindow] Ouverture d'un fichier JSON")
         file_dialog = QFileDialog(self)
         file_dialog.setNameFilter("Fichiers JSON (*.json)")
         if file_dialog.exec():
             filenames = file_dialog.selectedFiles()
             if filenames:
+                print(f"[AdminWindow] Fichier sélectionné : {filenames[0]}")
                 self.afficher_stocks_depuis_json(filenames[0])
                 self.status_bar.setText(f"Fichier chargé : {filenames[0]}")
 
     def afficher_stocks_depuis_json(self, articles_json_content):
+        print("[AdminWindow] Chargement des articles depuis JSON")
         self.stocks_list.clear()
         self.produit_categorie_map = {}
         self.categories = set()
@@ -302,8 +316,10 @@ class AdminWindow(QWidget):
             # On reçoit le contenu JSON, pas un chemin
             data = json.loads(articles_json_content)
             for categorie, produits in data.items():
+                print(f"[AdminWindow] Catégorie chargée : {categorie} ({len(produits)} produits)")
                 self.categories.add(categorie)
                 for produit in produits:
+                    print(f"[AdminWindow] Produit ajouté : {produit}")
                     self.stocks_list.addItem(produit)
                     self.produit_categorie_map[produit] = categorie
             self.filtre_combo.blockSignals(True)
@@ -313,7 +329,9 @@ class AdminWindow(QWidget):
                 self.filtre_combo.addItem(cat)
             self.filtre_combo.blockSignals(False)
             self.status_bar.setText(f"{self.stocks_list.count()} produits chargés depuis la base de données.")
+            print("[AdminWindow] Chargement des articles terminé")
         except Exception as e:
+            print(f"[AdminWindow] Erreur lors du chargement des articles : {e}")
             self.stocks_list.addItem("Erreur de lecture du JSON")
             self.status_bar.setText("Erreur lors du chargement des articles.")
 
@@ -321,13 +339,16 @@ class AdminWindow(QWidget):
     def afficher_details_produit(self, item):
         produit = item.text()
         categorie = self.produit_categorie_map.get(produit, "Inconnu")
+        print(f"[AdminWindow] Détail produit sélectionné : {produit} (Catégorie : {categorie})")
         self.produit_label.setText(f"Produit : {produit}")
         self.categorie_label.setText(f"Catégorie : {categorie}")
 
     # Filtre la liste des articles selon la catégorie
     def filtrer_stocks(self, categorie):
+        print(f"[AdminWindow] Filtrage des stocks sur la catégorie : {categorie}")
         self.stocks_list.clear()
         if not hasattr(self, "produit_categorie_map"):
+            print("[AdminWindow] Aucun mapping produit-catégorie")
             return
         texte = self.search_input.text().lower() if hasattr(self, "search_input") else ""
         for produit, cat in self.produit_categorie_map.items():
@@ -336,25 +357,31 @@ class AdminWindow(QWidget):
 
     # Déconnecte l'utilisateur
     def deconnexion(self):
+        print("[AdminWindow] Déconnexion demandée")
         from main import LoginWindow  
         self.close()
+        print("[AdminWindow] Déconnexion d'un admin")
         self.login_window = LoginWindow()
         self.login_window.show()
 
     # Récupérer le magasin du gérant connecté
     def recuperer_magasins(self, user_id):
+        print(f"[AdminWindow] Récupération des magasins pour user_id={user_id}")
         conn = sqlite3.connect("market_tracer.db")
         c = conn.cursor()
         c.execute("SELECT * FROM shops WHERE user_id=?", (user_id,))
         shops = c.fetchall()
         conn.close()
+        print(f"[AdminWindow] {len(shops)} magasins trouvés")
         return shops
 
     # Ouvre la boîte de dialogue d'ajout d'article
     def ouvrir_dialog_ajout_article(self):
+        print("[AdminWindow] Ouverture de la boîte d'ajout d'article")
         dialog = AddArticleDialog(self.categories, self)
         if dialog.exec():
             nom, categorie = dialog.get_data()
+            print(f"[AdminWindow] Article à ajouter : {nom} (Catégorie : {categorie})")
             if nom and categorie:
                 self.stocks_list.addItem(nom)
                 self.produit_categorie_map[nom] = categorie
@@ -385,17 +412,20 @@ class AdminWindow(QWidget):
                         data[categorie].append(nom)
                     with open(chemin_json, "w", encoding="utf-8") as f:
                         json.dump(data, f, ensure_ascii=False, indent=2)
-
+                    print("[AdminWindow] Article ajouté et JSON mis à jour")
             else:
+                print("[AdminWindow] Champs manquants pour l'ajout d'article")
                 QMessageBox.warning(self, "Erreur", "Veuillez remplir tous les champs.")
 
     # Retire l'article sélectionné
     def retirer_article_selectionne(self):
         item = self.stocks_list.currentItem()
         if not item:
+            print("[AdminWindow] Aucun article sélectionné pour suppression")
             QMessageBox.warning(self, "Aucun article sélectionné", "Veuillez sélectionner un article à retirer.")
             return
         nom = item.text()
+        print(f"[AdminWindow] Suppression demandée pour l'article : {nom}")
         msg_box = QMessageBox(self)
         msg_box.setWindowTitle("Confirmation")
         msg_box.setText(f"Voulez-vous vraiment retirer l'article '{nom}' du stock ?")
@@ -425,11 +455,13 @@ class AdminWindow(QWidget):
                         del data[categorie]
                 with open(chemin_json, "w", encoding="utf-8") as f:
                     json.dump(data, f, ensure_ascii=False, indent=2)
+                print("[AdminWindow] Article supprimé et JSON mis à jour")
                 self.afficher_stocks_depuis_json(chemin_json)
             self.status_bar.setText(f"Article '{nom}' retiré du stock.")
 
     # Ouvre la fenêtre de modification du magasin
     def ouvrir_modifier_magasin(self):
+        print("[AdminWindow] Ouverture de la fenêtre de modification du magasin")
         from createShopWindow import CreateShopWindow
         conn = sqlite3.connect("market_tracer.db")
         c = conn.cursor()
@@ -448,11 +480,13 @@ class AdminWindow(QWidget):
             }
         dialog = CreateShopWindow(self.user_id, self, shop_data)
         if dialog.exec():
+            print("[AdminWindow] Magasin modifié avec succès")
             self.status_bar.setText("Magasin modifié avec succès.")
             self.afficher_stocks_depuis_json(dialog.json_input.text())
 
     # Recherche les articles
     def rechercher_stocks(self, texte):
+        print(f"[AdminWindow] Recherche dans les stocks : '{texte}'")
         texte = texte.lower()
         categorie = self.filtre_combo.currentText()
         self.stocks_list.clear()
@@ -462,6 +496,7 @@ class AdminWindow(QWidget):
 
     # Ouvre la fenêtre de gestion des employés
     def ouvrir_gestion_employes(self):
+        print("[AdminWindow] Ouverture de la gestion des employés")
         conn = sqlite3.connect("market_tracer.db")
         c = conn.cursor()
         c.execute("SELECT id FROM shops WHERE user_id=?", (self.user_id,))
@@ -472,11 +507,14 @@ class AdminWindow(QWidget):
             dlg = EmployeeManagerDialog(shop_id, self)
             dlg.exec()
         else:
+            print("[AdminWindow] Aucun magasin associé à ce compte pour la gestion des employés")
             QMessageBox.warning(self, "Erreur", "Aucun magasin associé à ce compte.")
 
     def ouvrir_gestion_magasins(self):
+        print("[AdminWindow] Ouverture de la gestion des magasins")
         dlg = ShopManagerDialog(self.user_id, self)
         if dlg.exec() and hasattr(dlg, "selected_shop_id"):
+            print(f"[AdminWindow] Magasin sélectionné : {dlg.selected_shop_id}")
             # Charger le magasin sélectionné
             conn = sqlite3.connect("market_tracer.db")
             c = conn.cursor()
@@ -484,11 +522,13 @@ class AdminWindow(QWidget):
             result = c.fetchone()
             conn.close()
             if result and result[0]:
+                print("[AdminWindow] Articles du magasin sélectionné chargés")
                 self.afficher_stocks_depuis_json(result[0])
                 self.status_bar.setText("Magasin chargé.")
             else:
+                print("[AdminWindow] Aucun article associé à ce magasin sélectionné")
                 self.status_bar.setText("Aucun article associé à ce magasin.")
-    
+
 # ==============================================================
 
 # Fonction pour détecter le thème sombre du système

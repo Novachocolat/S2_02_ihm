@@ -12,7 +12,7 @@ from PyQt6.QtWidgets import (
     QApplication, QWidget, QLabel, QVBoxLayout, QHBoxLayout, QFrame, QPushButton, QListWidget,
     QLineEdit, QMenuBar, QFileDialog, QComboBox, QGroupBox
 )
-from PyQt6.QtGui import QFont, QIcon
+from PyQt6.QtGui import QFont, QIcon, QGuiApplication
 from PyQt6.QtCore import Qt
 import sys
 import json
@@ -25,15 +25,22 @@ import json
 class CustomerWindow(QWidget):
     def __init__(self, articles_json=None):
         super().__init__()
+        print("[CustomerWindow] Initialisation de la fenêtre client")
         self.setWindowTitle("Market Tracer - Client")
         self.setWindowIcon(QIcon("img/chariot.png"))
-        self.resize(1400, 900)
-        self.setMinimumSize(1000, 700)
-        print("Connexion d'un client")
+
+        # Taille dynamique
+        screen = QGuiApplication.primaryScreen().geometry()
+        self.resize(int(screen.width() * 0.9), int(screen.height() * 0.9))
+        self.setMinimumSize(int(screen.width() * 0.7), int(screen.height() * 0.7))
+        self.showMaximized()
+
+        print("[CustomerWindow] Connexion d'un client")
         self.articles_json = articles_json
         self.setup_ui()
 
     def setup_ui(self):
+        print("[CustomerWindow] Construction de l'UI")
         # Layout principal vertical
         main_layout = QVBoxLayout(self)
         main_layout.setContentsMargins(5, 5, 5, 5)
@@ -41,6 +48,7 @@ class CustomerWindow(QWidget):
 
         # Barre de menus en haut
         menubar = QMenuBar()
+        print("[CustomerWindow] Ajout de la barre de menus")
 
         # Menus principaux
         fichier_menu = menubar.addMenu("Fichier")
@@ -67,6 +75,7 @@ class CustomerWindow(QWidget):
         menubar.setCornerWidget(btn_deconnexion, Qt.Corner.TopRightCorner)
 
         main_layout.addWidget(menubar)
+        print("[CustomerWindow] Barre de menus ajoutée")
 
         # Ligne horizontale
         hline_menu = QFrame()
@@ -215,14 +224,17 @@ class CustomerWindow(QWidget):
 
         # À la fin de setup_ui, charge les articles si fournis
         if self.articles_json:
+            print("[CustomerWindow] Chargement des articles depuis le magasin")
             try:
                 data = json.loads(self.articles_json)
                 self.stocks_list.clear()
                 self.produit_categorie_map = {}
                 self.categories = set()
                 for categorie, produits in data.items():
+                    print(f"[CustomerWindow] Catégorie chargée : {categorie} ({len(produits)} produits)")
                     self.categories.add(categorie)
                     for produit in produits:
+                        print(f"[CustomerWindow] Produit ajouté : {produit}")
                         self.stocks_list.addItem(produit)
                         self.produit_categorie_map[produit] = categorie
                 self.filtre_combo.blockSignals(True)
@@ -232,23 +244,26 @@ class CustomerWindow(QWidget):
                     self.filtre_combo.addItem(cat)
                 self.filtre_combo.blockSignals(False)
                 self.status_bar.setText(f"{self.stocks_list.count()} produits chargés depuis le magasin.")
-            except Exception:
+                print("[CustomerWindow] Chargement des articles terminé")
+            except Exception as e:
+                print(f"[CustomerWindow] Erreur lors du chargement des articles : {e}")
                 self.status_bar.setText("Erreur lors du chargement des articles du magasin.")
 
     # Ouvre un fichier JSON et charge les produits
     def ouvrir_fichier_json(self):
-        """Ouvre un fichier JSON et charge les produits."""
+        print("[CustomerWindow] Ouverture d'un fichier JSON")
         file_dialog = QFileDialog(self)
         file_dialog.setNameFilter("Fichiers JSON (*.json)")
         if file_dialog.exec():
             filenames = file_dialog.selectedFiles()
             if filenames:
+                print(f"[CustomerWindow] Fichier sélectionné : {filenames[0]}")
                 self.afficher_stocks_depuis_json(filenames[0])
                 self.status_bar.setText(f"Fichier chargé : {filenames[0]}")
 
     # Affiche les produits du fichier JSON dans la liste
     def afficher_stocks_depuis_json(self, chemin):
-        """Affiche les produits du fichier JSON dans la liste."""
+        print(f"[CustomerWindow] Chargement des produits depuis le fichier : {chemin}")
         self.stocks_list.clear()
         self.produit_categorie_map = {}
         self.categories = set()
@@ -256,8 +271,10 @@ class CustomerWindow(QWidget):
             with open(chemin, "r", encoding="utf-8") as f:
                 data = json.load(f)
                 for categorie, produits in data.items():
+                    print(f"[CustomerWindow] Catégorie chargée : {categorie} ({len(produits)} produits)")
                     self.categories.add(categorie)
                     for produit in produits:
+                        print(f"[CustomerWindow] Produit ajouté : {produit}")
                         self.stocks_list.addItem(produit)
                         self.produit_categorie_map[produit] = categorie
             self.filtre_combo.blockSignals(True)
@@ -267,23 +284,26 @@ class CustomerWindow(QWidget):
                 self.filtre_combo.addItem(cat)
             self.filtre_combo.blockSignals(False)
             self.status_bar.setText(f"{self.stocks_list.count()} produits chargés depuis le fichier.")
+            print("[CustomerWindow] Chargement depuis fichier terminé")
         except Exception as e:
+            print(f"[CustomerWindow] Erreur de lecture du fichier : {e}")
             self.stocks_list.addItem("Erreur de lecture du fichier")
             self.status_bar.setText("Erreur lors du chargement du fichier.")
 
     # Affiche les détails du produit sélectionné
     def afficher_details_produit(self, item):
-        """Affiche les détails du produit sélectionné."""
         produit = item.text()
         categorie = self.produit_categorie_map.get(produit, "Inconnu")
+        print(f"[CustomerWindow] Détail produit sélectionné : {produit} (Catégorie : {categorie})")
         self.produit_label.setText(f"Produit : {produit}")
         self.categorie_label.setText(f"Catégorie : {categorie}")
 
     # Filtre la liste des produits selon la catégorie sélectionnée
     def filtrer_stocks(self, categorie):
-        """Filtre la liste des produits selon la catégorie sélectionnée."""
+        print(f"[CustomerWindow] Filtrage des stocks sur la catégorie : {categorie}")
         self.stocks_list.clear()
         if not hasattr(self, "produit_categorie_map"):
+            print("[CustomerWindow] Aucun mapping produit-catégorie")
             return
         if categorie == "Toutes les catégories":
             for produit in self.produit_categorie_map:
@@ -295,10 +315,10 @@ class CustomerWindow(QWidget):
 
     # Déconnecte l'utilisateur et retourne à la fenêtre de connexion
     def deconnexion(self):
-        """Déconnecte l'utilisateur et retourne à la fenêtre de connexion."""
+        print("[CustomerWindow] Déconnexion demandée")
         from main import LoginWindow
         self.close()
-        print("Déconnexion d'un client")
+        print("[CustomerWindow] Déconnexion d'un client")
         self.login_window = LoginWindow()
         self.login_window.show()
 

@@ -12,7 +12,7 @@ from PyQt6.QtWidgets import (
     QApplication, QWidget, QLabel, QVBoxLayout, QHBoxLayout, QFrame, QPushButton, QListWidget,
     QLineEdit, QMenuBar, QFileDialog, QComboBox, QGroupBox
 )
-from PyQt6.QtGui import QFont, QIcon
+from PyQt6.QtGui import QFont, QIcon, QGuiApplication
 from PyQt6.QtCore import Qt
 import sys
 import json
@@ -23,16 +23,28 @@ import json
 
 # =============================================================
 class EmployeeWindow(QWidget):
-    def __init__(self):
+    def __init__(self, articles_json=None, plan_path=None):
         super().__init__()
+        print("[EmployeeWindow] Initialisation de la fenêtre employé")
         self.setWindowTitle("Market Tracer - Employé")
         self.setWindowIcon(QIcon("img/chariot.png"))
-        self.resize(1400, 900)
-        self.setMinimumSize(1000, 700)
-        print("Connexion d'un employé")
+
+        # Taille dynamique
+        screen = QGuiApplication.primaryScreen().geometry()
+        self.resize(int(screen.width() * 0.9), int(screen.height() * 0.9))
+        self.setMinimumSize(int(screen.width() * 0.7), int(screen.height() * 0.7))
+        self.showMaximized()
+
+        print("[EmployeeWindow] Connexion d'un employé")
+        self.articles_json = articles_json
+        self.plan_path = plan_path
+        print(f"[EmployeeWindow] Articles reçus : {bool(articles_json)}, Plan reçu : {plan_path}")
+        self.categories = set()
+
         self.setup_ui()
 
     def setup_ui(self):
+        print("[EmployeeWindow] Construction de l'UI")
         # Layout principal vertical
         main_layout = QVBoxLayout(self)
         main_layout.setContentsMargins(5, 5, 5, 5)
@@ -40,6 +52,7 @@ class EmployeeWindow(QWidget):
 
         # Barre de menus en haut
         menubar = QMenuBar()
+        print("[EmployeeWindow] Ajout de la barre de menus")
 
         # Menus principaux
         fichier_menu = menubar.addMenu("Fichier")
@@ -66,6 +79,7 @@ class EmployeeWindow(QWidget):
         menubar.setCornerWidget(btn_deconnexion, Qt.Corner.TopRightCorner)
 
         main_layout.addWidget(menubar)
+        print("[EmployeeWindow] Barre de menus ajoutée")
 
         # Ligne horizontale
         hline_menu = QFrame()
@@ -183,7 +197,9 @@ class EmployeeWindow(QWidget):
         right_col.addWidget(btn_generer)
         right_col.addWidget(btn_effacer)
         right_col.addWidget(btn_exporter)
-        right_col.addSpacing(400)
+
+        # Ajoute un stretch pour pousser le détail tout en bas
+        right_col.addStretch()
 
         # Ajout du cadre de détails du produit en bas de la colonne droite
         details_box = QGroupBox("Détail")
@@ -196,8 +212,6 @@ class EmployeeWindow(QWidget):
         details_layout.addWidget(self.categorie_label)
         details_box.setLayout(details_layout)
         right_col.addWidget(details_box)
-
-        right_col.addStretch()
 
         right_widget = QWidget()
         right_widget.setLayout(right_col)
@@ -212,20 +226,47 @@ class EmployeeWindow(QWidget):
         self.status_bar.setAlignment(Qt.AlignmentFlag.AlignLeft)
         main_layout.addWidget(self.status_bar)
 
+        if self.articles_json:
+            try:
+                data = json.loads(self.articles_json)
+                for categorie, produits in data.items():
+                    print(f"[EmployeeWindow] Catégorie chargée : {categorie} ({len(produits)} produits)")
+                    self.categories.add(categorie)
+                    for produit in produits:
+                        print(f"[EmployeeWindow] Produit ajouté : {produit}")
+                        self.stocks_list.addItem(produit)
+                        self.produit_categorie_map[produit] = categorie
+                self.filtre_combo.blockSignals(True)
+                self.filtre_combo.clear()
+                self.filtre_combo.addItem("Toutes les catégories")
+                for cat in sorted(self.categories):
+                    self.filtre_combo.addItem(cat)
+                self.filtre_combo.blockSignals(False)
+                self.status_bar.setText(f"{self.stocks_list.count()} produits chargés.")
+                print("[EmployeeWindow] Articles du magasin chargés")
+            except Exception as e:
+                print(f"[EmployeeWindow] Erreur de chargement des articles : {e}")
+                self.status_bar.setText("Erreur lors du chargement des articles.")
+
+        if self.plan_path:
+            print(f"[EmployeeWindow] Plan du magasin à charger : {self.plan_path}")
+            # TODO: charger le plan dans le widget approprié
+
     # Ouvre un fichier JSON et charge les produits
     def ouvrir_fichier_json(self):
-        """Ouvre un fichier JSON et charge les produits."""
+        print("[EmployeeWindow] Ouverture d'un fichier JSON")
         file_dialog = QFileDialog(self)
         file_dialog.setNameFilter("Fichiers JSON (*.json)")
         if file_dialog.exec():
             filenames = file_dialog.selectedFiles()
             if filenames:
+                print(f"[EmployeeWindow] Fichier sélectionné : {filenames[0]}")
                 self.afficher_stocks_depuis_json(filenames[0])
                 self.status_bar.setText(f"Fichier chargé : {filenames[0]}")
 
     # Affiche les produits du fichier JSON dans la liste
     def afficher_stocks_depuis_json(self, chemin):
-        """Affiche les produits du fichier JSON dans la liste."""
+        print(f"[EmployeeWindow] Chargement des produits depuis le fichier : {chemin}")
         self.stocks_list.clear()
         self.produit_categorie_map = {}
         self.categories = set()
@@ -233,8 +274,10 @@ class EmployeeWindow(QWidget):
             with open(chemin, "r", encoding="utf-8") as f:
                 data = json.load(f)
                 for categorie, produits in data.items():
+                    print(f"[EmployeeWindow] Catégorie chargée : {categorie} ({len(produits)} produits)")
                     self.categories.add(categorie)
                     for produit in produits:
+                        print(f"[EmployeeWindow] Produit ajouté : {produit}")
                         self.stocks_list.addItem(produit)
                         self.produit_categorie_map[produit] = categorie
             self.filtre_combo.blockSignals(True)
@@ -244,23 +287,26 @@ class EmployeeWindow(QWidget):
                 self.filtre_combo.addItem(cat)
             self.filtre_combo.blockSignals(False)
             self.status_bar.setText(f"{self.stocks_list.count()} produits chargés depuis le fichier.")
+            print("[EmployeeWindow] Chargement depuis fichier terminé")
         except Exception as e:
+            print(f"[EmployeeWindow] Erreur de lecture du fichier : {e}")
             self.stocks_list.addItem("Erreur de lecture du fichier")
             self.status_bar.setText("Erreur lors du chargement du fichier.")
 
     # Affiche les détails du produit sélectionné
     def afficher_details_produit(self, item):
-        """Affiche les détails du produit sélectionné."""
         produit = item.text()
         categorie = self.produit_categorie_map.get(produit, "Inconnu")
+        print(f"[EmployeeWindow] Détail produit sélectionné : {produit} (Catégorie : {categorie})")
         self.produit_label.setText(f"Produit : {produit}")
         self.categorie_label.setText(f"Catégorie : {categorie}")
 
     # Filtre la liste des produits selon la catégorie sélectionnée
     def filtrer_stocks(self, categorie):
-        """Filtre la liste des produits selon la catégorie sélectionnée."""
+        print(f"[EmployeeWindow] Filtrage des stocks sur la catégorie : {categorie}")
         self.stocks_list.clear()
         if not hasattr(self, "produit_categorie_map"):
+            print("[EmployeeWindow] Aucun mapping produit-catégorie")
             return
         if categorie == "Toutes les catégories":
             for produit in self.produit_categorie_map:
@@ -272,10 +318,10 @@ class EmployeeWindow(QWidget):
 
     # Déconnecte l'utilisateur et retourne à la fenêtre de connexion
     def deconnexion(self):
-        """Déconnecte l'utilisateur et retourne à la fenêtre de connexion."""
+        print("[EmployeeWindow] Déconnexion demandée")
         from main import LoginWindow
         self.close()
-        print("Déconnexion d'un employé")
+        print("[EmployeeWindow] Déconnexion d'un employé")
         self.login_window = LoginWindow()
         self.login_window.show()
 
