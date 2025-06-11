@@ -18,38 +18,9 @@ import sys
 import json
 import sqlite3
 import platform
-
-# ==============================================================
-
-# Fenêtre d'ajout d'article
-
-# =============================================================
-
-class AddArticleDialog(QDialog):
-    def __init__(self, categories, parent=None):
-        super().__init__(parent)
-        self.setWindowTitle("Ajouter un article")
-        self.setWindowIcon(QIcon("img/chariot.png"))
-        self.setMinimumWidth(300)
-        layout = QFormLayout(self)
-
-        self.nom_input = QLineEdit()
-        layout.addRow("Nom de l'article :", self.nom_input)
-
-        self.categorie_combo = QComboBox()
-        self.categorie_combo.addItems(sorted(categories) if categories else [])
-        layout.addRow("Catégorie :", self.categorie_combo)
-
-        buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel)
-        buttons.accepted.connect(self.accept)
-        buttons.rejected.connect(self.reject)
-        layout.addWidget(buttons)
-
-        self.setLayout(layout)
-
-    # Récupère les données saisies
-    def get_data(self):
-        return self.nom_input.text(), self.categorie_combo.currentText()
+from addArticleDialog import AddArticleDialog
+from shopManagerDialog import ShopManagerDialog
+from employeeManagerDialog import EmployeeManagerDialog
 
 # ==============================================================
 
@@ -79,7 +50,8 @@ class AdminWindow(QWidget):
         # Fichier
         fichier_menu = menubar.addMenu("Fichier")
         fichier_menu.addAction("Ouvrir")
-        fichier_menu.addAction("Charger")
+        action_charger = fichier_menu.addAction("Charger")
+        action_charger.triggered.connect(self.ouvrir_gestion_magasins)
         fichier_menu.addAction("Fermer")
         fichier_menu.addAction("Exporter")
 
@@ -245,24 +217,29 @@ class AdminWindow(QWidget):
         grid_box.setMinimumWidth(220)
         grid_layout = QVBoxLayout()
         grid_layout.setContentsMargins(10, 10, 10, 10)
+
+        # Bouton Afficher le quadrillage
         grid_checkbox = QCheckBox("Afficher le quadrillage")
         grid_layout.addWidget(grid_checkbox)
-        grid_pos_label = QLabel("Position du quadrillage")
-        grid_layout.addWidget(grid_pos_label)
-        pos_layout = QHBoxLayout()
-        x_label = QLabel("x :")
-        pos_layout.addWidget(x_label)
-        x_spin = QSpinBox()
-        pos_layout.addWidget(x_spin)
-        y_label = QLabel("y :")
-        pos_layout.addWidget(y_label)
-        y_spin = QSpinBox()
-        pos_layout.addWidget(y_spin)
-        grid_layout.addLayout(pos_layout)
-        taille_label = QLabel("Taille des cases")
-        grid_layout.addWidget(taille_label)
-        taille_spin = QSpinBox()
-        grid_layout.addWidget(taille_spin)
+
+        # Bouton Définir point d'entrée (mutuellement exclusif avec caisse)
+        btn_point_entree = QCheckBox("Définir comme point d'entrée")
+        grid_layout.addWidget(btn_point_entree)
+
+        # Bouton Définir caisse (mutuellement exclusif avec point d'entrée)
+        btn_caisse = QCheckBox("Définir comme caisse")
+        grid_layout.addWidget(btn_caisse)
+
+        # Empêcher les 2 cases d'être cochées en même temps
+        def exclusif_point_entree(state):
+            if state:
+                btn_caisse.setChecked(False)
+        def exclusif_caisse(state):
+            if state:
+                btn_point_entree.setChecked(False)
+        btn_point_entree.stateChanged.connect(lambda state: exclusif_point_entree(state == 2))
+        btn_caisse.stateChanged.connect(lambda state: exclusif_caisse(state == 2))
+
         grid_box.setLayout(grid_layout)
         right_col.addWidget(grid_box)
 
@@ -305,7 +282,7 @@ class AdminWindow(QWidget):
         if result and result[0]:
             self.afficher_stocks_depuis_json(result[0])
         else:
-            self.status_bar.setText("Aucun fichier d'articles associé à ce magasin.")
+            self.status_bar.setText("Aucun article associé à ce magasin.")
 
     # Ouvre un fichier JSON et charge les articles
     def ouvrir_fichier_json(self):
@@ -317,29 +294,28 @@ class AdminWindow(QWidget):
                 self.afficher_stocks_depuis_json(filenames[0])
                 self.status_bar.setText(f"Fichier chargé : {filenames[0]}")
 
-    # Affiche les articles du fichier JSON
-    def afficher_stocks_depuis_json(self, chemin):
+    def afficher_stocks_depuis_json(self, articles_json_content):
         self.stocks_list.clear()
         self.produit_categorie_map = {}
         self.categories = set()
         try:
-            with open(chemin, "r", encoding="utf-8") as f:
-                data = json.load(f)
-                for categorie, produits in data.items():
-                    self.categories.add(categorie)
-                    for produit in produits:
-                        self.stocks_list.addItem(produit)
-                        self.produit_categorie_map[produit] = categorie
+            # On reçoit le contenu JSON, pas un chemin
+            data = json.loads(articles_json_content)
+            for categorie, produits in data.items():
+                self.categories.add(categorie)
+                for produit in produits:
+                    self.stocks_list.addItem(produit)
+                    self.produit_categorie_map[produit] = categorie
             self.filtre_combo.blockSignals(True)
             self.filtre_combo.clear()
             self.filtre_combo.addItem("Toutes les catégories")
             for cat in sorted(self.categories):
                 self.filtre_combo.addItem(cat)
             self.filtre_combo.blockSignals(False)
-            self.status_bar.setText(f"{self.stocks_list.count()} produits chargés depuis le fichier.")
+            self.status_bar.setText(f"{self.stocks_list.count()} produits chargés depuis la base de données.")
         except Exception as e:
-            self.stocks_list.addItem("Erreur de lecture du fichier")
-            self.status_bar.setText("Erreur lors du chargement du fichier.")
+            self.stocks_list.addItem("Erreur de lecture du JSON")
+            self.status_bar.setText("Erreur lors du chargement des articles.")
 
     # Affiche les détails du produit sélectionné
     def afficher_details_produit(self, item):
@@ -498,126 +474,26 @@ class AdminWindow(QWidget):
         else:
             QMessageBox.warning(self, "Erreur", "Aucun magasin associé à ce compte.")
 
-# ==========================================================
-
-# Fenêtre de gestion des employés
-
-# ==========================================================
-
-class EmployeeManagerDialog(QDialog):
-    # Initialise la fenêtre
-    def __init__(self, shop_id, parent=None):
-        super().__init__(parent)
-        self.setWindowTitle("Gérer les employés")
-        self.setMinimumWidth(400)
-        self.shop_id = shop_id
-
-        layout = QVBoxLayout(self)
-
-        self.list = QListWidget()
-        layout.addWidget(self.list)
-
-        btns = QHBoxLayout()
-        self.btn_add = QPushButton("Ajouter")
-        self.btn_edit = QPushButton("Modifier")
-        self.btn_del = QPushButton("Supprimer")
-        btns.addWidget(self.btn_add)
-        btns.addWidget(self.btn_edit)
-        btns.addWidget(self.btn_del)
-        layout.addLayout(btns)
-
-        self.btn_add.clicked.connect(self.add_employee)
-        self.btn_edit.clicked.connect(self.edit_employee)
-        self.btn_del.clicked.connect(self.delete_employee)
-
-        self.refresh()
-
-    # Rafraîchit la liste des employés
-    def refresh(self):
-        self.list.clear()
-        conn = sqlite3.connect("market_tracer.db")
-        c = conn.cursor()
-        c.execute("SELECT id, username FROM users WHERE role='Employé' AND shop_id=?", (self.shop_id,))
-        for emp_id, username in c.fetchall():
-            self.list.addItem(f"{emp_id} - {username}")
-        conn.close()
-
-    # Ajout d'un nouvel employé
-    def add_employee(self):
-        dialog = EmployeeEditDialog(parent=self)
-        if dialog.exec():
-            username, password = dialog.get_data()
+    def ouvrir_gestion_magasins(self):
+        dlg = ShopManagerDialog(self.user_id, self)
+        if dlg.exec() and hasattr(dlg, "selected_shop_id"):
+            # Charger le magasin sélectionné
             conn = sqlite3.connect("market_tracer.db")
             c = conn.cursor()
-            c.execute("INSERT INTO users (username, password, role, shop_id) VALUES (?, ?, 'Employé', ?)", (username, password, self.shop_id))
-            conn.commit()
+            c.execute("SELECT articles_json FROM shops WHERE id=?", (dlg.selected_shop_id,))
+            result = c.fetchone()
             conn.close()
-            self.refresh()
-
-    # Modifie l'employé sélectionné
-    def edit_employee(self):
-        item = self.list.currentItem()
-        if not item:
-            QMessageBox.warning(self, "Sélection", "Sélectionnez un employé à modifier.")
-            return
-        emp_id = int(item.text().split(" - ")[0])
-        dialog = EmployeeEditDialog(parent=self)
-        if dialog.exec():
-            username, password = dialog.get_data()
-            conn = sqlite3.connect("market_tracer.db")
-            c = conn.cursor()
-            c.execute("UPDATE users SET username=?, password=? WHERE id=?", (username, password, emp_id))
-            conn.commit()
-            conn.close()
-            self.refresh()
-
-    # Supprime l'employé sélectionné
-    def delete_employee(self):
-        item = self.list.currentItem()
-        if not item:
-            QMessageBox.warning(self, "Sélection", "Sélectionnez un employé à supprimer.")
-            return
-        emp_id = int(item.text().split(" - ")[0])
-        reply = QMessageBox.question(self, "Confirmation", "Supprimer cet employé ?", QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No)
-        if reply == QMessageBox.StandardButton.Yes:
-            conn = sqlite3.connect("market_tracer.db")
-            c = conn.cursor()
-            c.execute("DELETE FROM users WHERE id=?", (emp_id,))
-            conn.commit()
-            conn.close()
-            self.refresh()
-
-# ==========================================================
-
-# Fenêtre de dialogue pour ajouter ou modifier un employé
-
-# ==========================================================
-
-class EmployeeEditDialog(QDialog):
-    # Initialise la boîte de dialogue
-    def __init__(self, parent=None):
-        super().__init__(parent)
-        self.setWindowTitle("Employé")
-        layout = QFormLayout(self)
-        self.user_input = QLineEdit()
-        self.pass_input = QLineEdit()
-        self.pass_input.setEchoMode(QLineEdit.EchoMode.Password)
-        layout.addRow("Nom d'utilisateur", self.user_input)
-        layout.addRow("Mot de passe", self.pass_input)
-        btns = QDialogButtonBox(QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel)
-        btns.accepted.connect(self.accept)
-        btns.rejected.connect(self.reject)
-        layout.addWidget(btns)
-
-    # Récupère les données saisies
-    def get_data(self):
-        return self.user_input.text(), self.pass_input.text()
-
-# ==========================================================
+            if result and result[0]:
+                self.afficher_stocks_depuis_json(result[0])
+                self.status_bar.setText("Magasin chargé.")
+            else:
+                self.status_bar.setText("Aucun article associé à ce magasin.")
+    
+# ==============================================================
 
 # Fonction pour détecter le thème sombre du système
 
-# =========================================================
+# ==============================================================
 
 def is_dark_theme():
     import os
@@ -650,11 +526,11 @@ def is_dark_theme():
         except Exception:
             return False
 
-# ==========================================================
+# ==============================================================
 
 # Lancement de l'application
 
-# ==========================================================
+# ==============================================================
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)

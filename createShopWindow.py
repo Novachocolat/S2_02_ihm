@@ -133,6 +133,15 @@ class CreateShopWindow(QDialog):
         chemin = self.chemin_input.text()
         json_path = self.json_input.text()
 
+        # Lecture du contenu du fichier JSON (au lieu de stocker le chemin)
+        articles_json_content = None
+        if json_path:
+            try:
+                with open(json_path, "r", encoding="utf-8") as f:
+                    articles_json_content = f.read()
+            except Exception:
+                articles_json_content = None
+
         # Création de la base de données et de la table si besoin
         conn = sqlite3.connect("market_tracer.db")
         c = conn.cursor()
@@ -160,11 +169,11 @@ class CreateShopWindow(QDialog):
         except sqlite3.OperationalError:
             pass
 
-        # Insertion des données du magasin
+        # Insertion des données du magasin (on stocke le contenu JSON, pas le chemin)
         c.execute("""
             INSERT INTO shops (nom, auteur, date_creation, apropos, chemin, articles_json, user_id)
             VALUES (?, ?, ?, ?, ?, ?, ?)
-        """, (nom, auteur, date, apropos, chemin, json_path, self.user_id))
+        """, (nom, auteur, date, apropos, chemin, articles_json_content, self.user_id))
         conn.commit()
         conn.close()
 
