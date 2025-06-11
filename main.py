@@ -37,6 +37,32 @@ def init_db():
             first_login INTEGER DEFAULT 1
         )
     ''')
+
+    # Création de la base de données et de la table si besoin
+    c.execute("""
+        CREATE TABLE IF NOT EXISTS shops (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            nom TEXT,
+            auteur TEXT,
+            date_creation TEXT,
+            apropos TEXT,
+            chemin TEXT,
+            articles_json TEXT,
+            user_id INTEGER,
+            FOREIGN KEY(user_id) REFERENCES users(id)
+        )
+    """)
+    # S'assure que la colonne articles_json existe
+    try:
+        c.execute("ALTER TABLE shops ADD COLUMN articles_json TEXT")
+    except sqlite3.OperationalError:
+        pass
+
+    try:
+        c.execute("ALTER TABLE shops ADD COLUMN user_id INTEGER")
+    except sqlite3.OperationalError:
+        pass
+
     
     # Ajout d'utilisateurs de test
     c.execute("INSERT OR IGNORE INTO users (username, password, role) VALUES ('gerant', '1234', 'Gérant')")
@@ -56,6 +82,7 @@ class LoginWindow(QWidget):
         self.rand_banner = rand.randrange(1, 6)
         self.setup_ui()
 
+    # Initialise l'interface utilisateur de la fenêtre de connexion
     def setup_ui(self):
         # Layout principal horizontal
         main_layout = QHBoxLayout(self)
@@ -196,6 +223,7 @@ class LoginWindow(QWidget):
         main_layout.addWidget(left_frame, stretch=3)
         main_layout.addWidget(right_frame, stretch=2)
 
+    # Gère la sélection du rôle
     def select_role(self, role):
         self.selected_role = role
         for r, btn in self.role_buttons.items():
@@ -215,6 +243,7 @@ class LoginWindow(QWidget):
             self.pass_label.show()
             self.pass_input.show()
 
+    # Connecte l'utilisateur
     def try_login(self):
         username = self.user_input.text()
         password = self.pass_input.text()
@@ -239,12 +268,10 @@ class LoginWindow(QWidget):
                     self.open_admin_window()
             elif role == "Employé":
                 print(f"[Login] Connexion employé : {username}")
-                # Récupère le shop_id de l'employé
                 c.execute("SELECT shop_id FROM users WHERE username=?", (username,))
                 shop_row = c.fetchone()
                 if shop_row and shop_row[0]:
                     shop_id = shop_row[0]
-                    # Récupère les infos du magasin
                     c.execute("SELECT articles_json, chemin FROM shops WHERE id=?", (shop_id,))
                     shop_info = c.fetchone()
                     if shop_info:
@@ -261,17 +288,18 @@ class LoginWindow(QWidget):
             self.error_label.setText("Nom d'utilisateur, mot de passe ou rôle incorrect.")
         conn.close()
 
+    # Lance la fenêtre client
     def enter_as_client(self):
         print("Entrée en tant que client.")
         self.open_client_window()
         self.close()
 
+    # Ouvre la fenêtre de sélection de magasin pour le client
     def open_client_window(self):
-        # Ouvre la boîte de sélection de magasin
         dlg = ShopSelectorDialog(self)
-        if dlg.exec() and dlg.selected_shop_id:
+        nb_shops = c.fetchone()[0]
+        if dlg.exec() and dlg.selected_shop_id :
             shop_id = dlg.selected_shop_id
-            # Récupère les infos du magasin sélectionné
             conn = sqlite3.connect("market_tracer.db")
             c = conn.cursor()
             c.execute("SELECT articles_json FROM shops WHERE id=?", (shop_id,))
@@ -280,9 +308,18 @@ class LoginWindow(QWidget):
             articles_json = result[0] if result else None
             self.client_window = CustomerWindow(articles_json)
             self.client_window.show()
+        else:
+            # Aucun magasin disponible ou aucun magasin sélectionné
+            conn = sqlite3.connect("market_tracer.db")
+            c = conn.cursor()
+            c.execute("SELECT COUNT(*) FROM shops")
+            nb_shops = c.fetchone()[0]
+            conn.close()
+            if nb_shops == 0:
+                QMessageBox.warning(self, "Aucun magasin", "Aucun magasin n'est disponible pour les clients.")
 
+    # Ouvre la fenêtre d'administration pour le gérant
     def open_admin_window(self):
-        # Récupère l'id du gérant connecté
         conn = sqlite3.connect("market_tracer.db")
         c = conn.cursor()
         c.execute("SELECT id FROM users WHERE username=?", (self.user_input.text(),))
@@ -291,6 +328,7 @@ class LoginWindow(QWidget):
         self.admin_window = AdminWindow(user_id)
         self.admin_window.show()
     
+    # Ouvre la fenêtre employé
     def open_employee_window(self):
         self.employee_window = EmployeeWindow()
         self.employee_window.show()

@@ -396,7 +396,7 @@ class AdminWindow(QWidget):
 
                 conn = sqlite3.connect("market_tracer.db")
                 c = conn.cursor()
-                c.execute("SELECT articles_json FROM shops WHERE user_id=?", (self.user_id,))
+                c.execute("SELECT chemin FROM shops WHERE user_id=?", (self.user_id,))
                 result = c.fetchone()
                 conn.close()
                 if result and result[0]:
@@ -437,9 +437,10 @@ class AdminWindow(QWidget):
             if categorie and nom in self.produit_categorie_map:
                 del self.produit_categorie_map[nom]
             self.stocks_list.takeItem(self.stocks_list.row(item))
+            # Correction : on récupère le chemin du fichier JSON, pas le contenu
             conn = sqlite3.connect("market_tracer.db")
             c = conn.cursor()
-            c.execute("SELECT articles_json FROM shops WHERE user_id=?", (self.user_id,))
+            c.execute("SELECT chemin FROM shops WHERE user_id=?", (self.user_id,))
             result = c.fetchone()
             conn.close()
             if result and result[0]:
@@ -456,7 +457,13 @@ class AdminWindow(QWidget):
                 with open(chemin_json, "w", encoding="utf-8") as f:
                     json.dump(data, f, ensure_ascii=False, indent=2)
                 print("[AdminWindow] Article supprimé et JSON mis à jour")
-                self.afficher_stocks_depuis_json(chemin_json)
+                # Recharge la liste depuis le fichier mis à jour
+                try:
+                    with open(chemin_json, "r", encoding="utf-8") as f:
+                        articles_json_content = f.read()
+                    self.afficher_stocks_depuis_json(articles_json_content)
+                except Exception as e:
+                    print(f"[AdminWindow] Erreur lors du rechargement des articles : {e}")
             self.status_bar.setText(f"Article '{nom}' retiré du stock.")
 
     # Ouvre la fenêtre de modification du magasin

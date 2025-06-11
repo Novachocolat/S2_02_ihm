@@ -142,34 +142,9 @@ class CreateShopWindow(QDialog):
             except Exception:
                 articles_json_content = None
 
-        # Création de la base de données et de la table si besoin
+        # Insertion des données du magasin (on stocke le contenu JSON, pas le chemin)
         conn = sqlite3.connect("market_tracer.db")
         c = conn.cursor()
-        c.execute("""
-            CREATE TABLE IF NOT EXISTS shops (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                nom TEXT,
-                auteur TEXT,
-                date_creation TEXT,
-                apropos TEXT,
-                chemin TEXT,
-                articles_json TEXT,
-                user_id INTEGER,
-                FOREIGN KEY(user_id) REFERENCES users(id)
-            )
-        """)
-        # S'assure que la colonne articles_json existe
-        try:
-            c.execute("ALTER TABLE shops ADD COLUMN articles_json TEXT")
-        except sqlite3.OperationalError:
-            pass
-
-        try:
-            c.execute("ALTER TABLE shops ADD COLUMN user_id INTEGER")
-        except sqlite3.OperationalError:
-            pass
-
-        # Insertion des données du magasin (on stocke le contenu JSON, pas le chemin)
         c.execute("""
             INSERT INTO shops (nom, auteur, date_creation, apropos, chemin, articles_json, user_id)
             VALUES (?, ?, ?, ?, ?, ?, ?)
