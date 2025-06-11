@@ -292,7 +292,7 @@ class AdminWindow(QWidget):
         if result and result[0]:
             self.afficher_stocks_depuis_json(result[0])
         else:
-            self.status_bar.setText("Aucun fichier d'articles associé à ce magasin.")
+            self.status_bar.setText("Aucun article associé à ce magasin.")
 
     def ouvrir_fichier_json(self):
         file_dialog = QFileDialog(self)
@@ -303,29 +303,28 @@ class AdminWindow(QWidget):
                 self.afficher_stocks_depuis_json(filenames[0])
                 self.status_bar.setText(f"Fichier chargé : {filenames[0]}")
 
-    def afficher_stocks_depuis_json(self, chemin):
+    def afficher_stocks_depuis_json(self, articles_json_content):
         self.stocks_list.clear()
         self.produit_categorie_map = {}
         self.categories = set()
         try:
-            with open(chemin, "r", encoding="utf-8") as f:
-                data = json.load(f)
-                for categorie, produits in data.items():
-                    self.categories.add(categorie)
-                    for produit in produits:
-                        self.stocks_list.addItem(produit)
-                        self.produit_categorie_map[produit] = categorie
-            # Remplir le menu déroulant des catégories
+            # On reçoit le contenu JSON, pas un chemin
+            data = json.loads(articles_json_content)
+            for categorie, produits in data.items():
+                self.categories.add(categorie)
+                for produit in produits:
+                    self.stocks_list.addItem(produit)
+                    self.produit_categorie_map[produit] = categorie
             self.filtre_combo.blockSignals(True)
             self.filtre_combo.clear()
             self.filtre_combo.addItem("Toutes les catégories")
             for cat in sorted(self.categories):
                 self.filtre_combo.addItem(cat)
             self.filtre_combo.blockSignals(False)
-            self.status_bar.setText(f"{self.stocks_list.count()} produits chargés depuis le fichier.")
+            self.status_bar.setText(f"{self.stocks_list.count()} produits chargés depuis la base de données.")
         except Exception as e:
-            self.stocks_list.addItem("Erreur de lecture du fichier")
-            self.status_bar.setText("Erreur lors du chargement du fichier.")
+            self.stocks_list.addItem("Erreur de lecture du JSON")
+            self.status_bar.setText("Erreur lors du chargement des articles.")
 
     def afficher_details_produit(self, item):
         produit = item.text()
