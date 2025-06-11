@@ -263,7 +263,11 @@ class GridOverlay(QGraphicsView):
 
     # Exporte vers un fichier JSON
     def export_cells_to_json(self, path):
-        data = []
+        data = {
+            "grid_size": self.grid_size,
+            "cells": []
+        }
+        
         for (row, col), color in self.colored_cells.items():
             for type_str, type_color in self.color_types.items():
                 if color == type_color:
@@ -275,7 +279,7 @@ class GridOverlay(QGraphicsView):
                     if type_str == "Rayon":
                         obj = self.objects_in_cells.get((row, col), None)
                         cell_data["object"] = obj if obj is not None else "NULL"
-                    data.append(cell_data)
+                    data["cells"].append(cell_data)
                     break
 
         with open(path, "w", encoding="utf-8") as f:
@@ -289,7 +293,15 @@ class GridOverlay(QGraphicsView):
             self.colored_cells.clear()
             self.objects_in_cells.clear()
             self.entrance_number = 0
-            for cell in data:
+
+            # Récupération de la taille du quadrillage si présente
+            if isinstance(data, dict) and "grid_size" in data:
+                self.grid_size = data["grid_size"]
+                self.slider.setValue(self.grid_size)
+
+            cells = data["cells"] if isinstance(data, dict) and "cells" in data else data
+
+            for cell in cells:
                 row = cell.get("row")
                 col = cell.get("col")
                 type_str = cell.get("type")
@@ -401,6 +413,7 @@ class MainWindow(QMainWindow):
         self.slider.setMaximum(100)
         self.slider.setValue(50)
         self.slider.valueChanged.connect(self.on_grid_size_changed)
+        self.grid_view.slider = self.slider
 
         self.grid_label = QLabel(f"Grille: {self.slider.value()} px")
         self.grid_label.setAlignment(Qt.AlignmentFlag.AlignHCenter)
@@ -471,6 +484,11 @@ class MainWindow(QMainWindow):
 
     # Exporter et importer les cases
     def export_cells(self):
+        # Vérifie qu'une image de plan est chargée
+        if self.grid_view.image_item is None:
+            QMessageBox.warning(self, "Erreur", "Veuillez d'abord charger une image de plan avant d'exporter un JSON.")
+            return
+
         file_name, _ = QFileDialog.getSaveFileName(self, "Exporter en JSON", "", "JSON (*.json)")
         if file_name:
             self.grid_view.export_cells_to_json(file_name)
@@ -478,6 +496,11 @@ class MainWindow(QMainWindow):
 
     # Importe les cases du JSON
     def import_cells(self):
+        # Vérifie qu'une image de plan est chargée
+        if self.grid_view.image_item is None:
+            QMessageBox.warning(self, "Erreur", "Veuillez d'abord charger une image de plan avant d'importer un JSON.")
+            return
+
         file_name, _ = QFileDialog.getOpenFileName(self, "Importer JSON", "", "JSON (*.json)")
         if file_name:
             self.grid_view.import_cells_from_json(file_name)
