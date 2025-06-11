@@ -83,7 +83,7 @@ class EmployeeWindow(QWidget):
         left_col = QVBoxLayout()
         left_col.setSpacing(10)
 
-        prod_label = QLabel("Produits disponibles")
+        prod_label = QLabel("Produits")
         prod_label.setFont(QFont("Arial", 12, QFont.Weight.Bold))
         left_col.addWidget(prod_label)
 
@@ -95,12 +95,20 @@ class EmployeeWindow(QWidget):
 
         btn_ajouter = QPushButton("Ajouter à ma liste")
         btn_ajouter.setMinimumHeight(32)
+        btn_ajouter.setStyleSheet("background: #56E39F; ")
+        
         btn_retirer = QPushButton("Retirer de ma liste")
         btn_retirer.setMinimumHeight(32)
+        btn_retirer.setStyleSheet("background: #FF6B3D; ")
+        
         left_col.addWidget(btn_ajouter)
         left_col.addWidget(btn_retirer)
 
         # Filtre par catégorie
+        filtre_label = QLabel("Filtre")
+        filtre_label.setFont(QFont("Arial", 12, QFont.Weight.Bold))
+        left_col.addWidget(filtre_label)
+        
         self.filtre_combo = QComboBox()
         self.filtre_combo.addItem("Toutes les catégories")
         self.filtre_combo.currentTextChanged.connect(self.filtrer_stocks)
@@ -116,7 +124,7 @@ class EmployeeWindow(QWidget):
         left_col.addWidget(btn_choisir_fichier)
 
         self.stocks_list = QListWidget()
-        left_col.addWidget(self.stocks_list)
+        left_col.addWidget(self.stocks_list, stretch=1)
 
         self.stocks_list.itemClicked.connect(self.afficher_details_produit)
         self.produit_categorie_map = {}
@@ -163,16 +171,19 @@ class EmployeeWindow(QWidget):
 
         btn_generer = QPushButton("Générer mon parcours")
         btn_generer.setMinimumHeight(32)
+        btn_generer.setStyleSheet("background-color: #56E39F;")
         btn_effacer = QPushButton("Effacer mon parcours")
         btn_effacer.setMinimumHeight(32)
+        btn_effacer.setStyleSheet("background: #FF6B3D; ")
         btn_exporter = QPushButton("Exporter mon parcours")
         btn_exporter.setMinimumHeight(32)
+    
 
         # Ajoute les boutons sans espace entre eux
         right_col.addWidget(btn_generer)
         right_col.addWidget(btn_effacer)
         right_col.addWidget(btn_exporter)
-        right_col.addSpacing(15)
+        right_col.addSpacing(400)
 
         # Ajout du cadre de détails du produit en bas de la colonne droite
         details_box = QGroupBox("Détail")
