@@ -19,6 +19,7 @@ from adminWindow import AdminWindow
 from employeeWindow import EmployeeWindow
 from customerWindow import CustomerWindow
 from createShopWindow import CreateShopWindow
+from shopSelectorDialog import ShopSelectorDialog
 
 # ==============================================================
 # Création de la base de données et de la table des utilisateurs
@@ -260,8 +261,19 @@ class LoginWindow(QWidget):
         self.close()
 
     def open_client_window(self):
-        self.client_window = CustomerWindow()
-        self.client_window.show()
+        # Ouvre la boîte de sélection de magasin
+        dlg = ShopSelectorDialog(self)
+        if dlg.exec() and dlg.selected_shop_id:
+            shop_id = dlg.selected_shop_id
+            # Récupère les infos du magasin sélectionné
+            conn = sqlite3.connect("market_tracer.db")
+            c = conn.cursor()
+            c.execute("SELECT articles_json FROM shops WHERE id=?", (shop_id,))
+            result = c.fetchone()
+            conn.close()
+            articles_json = result[0] if result else None
+            self.client_window = CustomerWindow(articles_json)
+            self.client_window.show()
 
     def open_admin_window(self):
         # Récupère l'id du gérant connecté

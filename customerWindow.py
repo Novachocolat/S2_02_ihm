@@ -23,13 +23,14 @@ import json
 
 # =============================================================
 class CustomerWindow(QWidget):
-    def __init__(self):
+    def __init__(self, articles_json=None):
         super().__init__()
-        self.setWindowTitle("Market Tracer - Clien")
+        self.setWindowTitle("Market Tracer - Client")
         self.setWindowIcon(QIcon("img/chariot.png"))
         self.resize(1400, 900)
         self.setMinimumSize(1000, 700)
         print("Connexion d'un client")
+        self.articles_json = articles_json
         self.setup_ui()
 
     def setup_ui(self):
@@ -211,6 +212,28 @@ class CustomerWindow(QWidget):
         self.status_bar = QLabel("Prêt")
         self.status_bar.setAlignment(Qt.AlignmentFlag.AlignLeft)
         main_layout.addWidget(self.status_bar)
+
+        # À la fin de setup_ui, charge les articles si fournis
+        if self.articles_json:
+            try:
+                data = json.loads(self.articles_json)
+                self.stocks_list.clear()
+                self.produit_categorie_map = {}
+                self.categories = set()
+                for categorie, produits in data.items():
+                    self.categories.add(categorie)
+                    for produit in produits:
+                        self.stocks_list.addItem(produit)
+                        self.produit_categorie_map[produit] = categorie
+                self.filtre_combo.blockSignals(True)
+                self.filtre_combo.clear()
+                self.filtre_combo.addItem("Toutes les catégories")
+                for cat in sorted(self.categories):
+                    self.filtre_combo.addItem(cat)
+                self.filtre_combo.blockSignals(False)
+                self.status_bar.setText(f"{self.stocks_list.count()} produits chargés depuis le magasin.")
+            except Exception:
+                self.status_bar.setText("Erreur lors du chargement des articles du magasin.")
 
     # Ouvre un fichier JSON et charge les produits
     def ouvrir_fichier_json(self):
