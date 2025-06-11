@@ -19,5 +19,7 @@ Historique des avancés de projet.
 | 10/06/2025 | Lysandre          | Début de création de la page Administrateur : création du magasin lors de la première connexion |
 | 10/06/2025 | David, Simon      | Logos et bannières                      |
 | 10/06/2025 | David             | Intégration des bannières dans la page de connexion |
+| 11/06/2025 | Noé               | Création de la fenêtre client + Refonte de la DA |
+| 11/06/2025 | Noé               | Création de la fenêtre employé + Refonte de la DA |
 
 # ⬅️ [Retour](https://github.com/Novachocolat/S2_02_ihm/blob/main/README.md)
