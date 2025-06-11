@@ -7,7 +7,7 @@ from PyQt6.QtWidgets import (
 from PyQt6.QtGui import QPixmap, QPen, QColor, QBrush
 from PyQt6.QtCore import Qt, QRectF
 
-# Image avec grille et cellules coloriées
+# Image avec grille et cases coloriées
 class GridOverlay(QGraphicsView):
     def __init__(self):
         super().__init__()
@@ -23,6 +23,7 @@ class GridOverlay(QGraphicsView):
             'Rayon': QColor(0, 0, 255, 120),
             'Caisse': QColor(255, 255, 0, 120),
             'Entrée': QColor(255, 0, 0, 120),
+            'Mur': QColor(128, 128, 128, 120), 
         }
 
         self.current_color_type = 'Rayon'
@@ -161,6 +162,10 @@ class MainWindow(QMainWindow):
         btn_entree = QPushButton("Entrée (Rouge)")
         btn_entree.clicked.connect(lambda: self.grid_view.set_current_color('Entrée'))
         color_buttons.addWidget(btn_entree)
+
+        btn_mur = QPushButton("Mur (Gris)")  # Ajout bouton pour murs
+        btn_mur.clicked.connect(lambda: self.grid_view.set_current_color('Mur'))
+        color_buttons.addWidget(btn_mur)
 
         btn_gomme = QPushButton("Gomme")
         btn_gomme.clicked.connect(lambda: self.grid_view.set_current_color('Gomme'))
