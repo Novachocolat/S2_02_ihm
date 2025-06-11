@@ -28,15 +28,28 @@ class GridOverlay(QGraphicsView):
             'Mur': QColor(128, 128, 128, 120),
         }
 
+        # Ajout de tous les rayons principaux du JSON dans emoji_mapping
         self.emoji_mapping = {
             "Fruits": "🍎",
             "Légumes": "🥦",
             "Viandes": "🍖",
             "Poisson": "🐟",
+            "Poissons": "🐟",
             "Boulangerie": "🥖",
             "Fromages": "🧀",
             "Boissons": "🥤",
             "Produits laitiers": "🥛",
+            "Rayon frais": "🥪",
+            "Crèmerie": "🧈",
+            "Conserves": "🥫",
+            "Apéritifs": "🍘",
+            "Épicerie": "🛒",
+            "Épicerie sucrée": "🍬",
+            "Petit déjeuner": "🥐",
+            "Articles Maison": "🧹",
+            "Hygiène": "🧴",
+            "Bureau": "🖊️",
+            "Animaux": "🐾",
             "Autre": "📦"
         }
 
@@ -79,7 +92,7 @@ class GridOverlay(QGraphicsView):
 
             if (row, col) in self.objects_in_cells:
                 obj = self.objects_in_cells[(row, col)]
-                emoji = self.emoji_mapping.get(obj, "❓")
+                emoji = self.emoji_mapping.get(obj, "❌")
                 text_item = self.scene.addText(emoji)
                 font = QFont()
                 font.setPointSize(int(self.grid_size * 0.6))
@@ -156,13 +169,38 @@ class GridOverlay(QGraphicsView):
             return
 
         data = event.mimeData().text()
+        # On récupère le nom du rayon (clé du mapping) et non un sous-produit
+        # Si le drag contient un objet JSON, on prend la clé principale
+        try:
+            obj = json.loads(data)
+            if isinstance(obj, dict) and "name" in obj:
+                obj_name = obj["name"]
+            elif isinstance(obj, str):
+                obj_name = obj
+            else:
+                obj_name = str(obj)
+        except Exception:
+            obj_name = data.strip().replace('"', '')
+
+        # Si le nom n'est pas dans le mapping, on essaie de le "nettoyer"
+        # (ex: si on droppe "Légumes" ou '{"name": "Légumes"}')
+        if obj_name not in self.emoji_mapping:
+            # On tente de récupérer le rayon à partir d'un sous-produit
+            # (ex: "🥦 Brocolis" => "Légumes")
+            for rayon in self.emoji_mapping:
+                if rayon in obj_name:
+                    obj_name = rayon
+                    break
+            else:
+                obj_name = "Autre"
+
         scene_pos = self.mapToScene(event.position().toPoint())
         col = int(scene_pos.x() // self.grid_size)
         row = int(scene_pos.y() // self.grid_size)
         cell_key = (row, col)
 
         if self.colored_cells.get(cell_key) == self.color_types["Rayon"]:
-            self.objects_in_cells[cell_key] = data
+            self.objects_in_cells[cell_key] = obj_name
             self.draw_grid()
         else:
             QMessageBox.warning(self, "Attention", "Vous ne pouvez déposer que sur des Rayons (bleus).")
@@ -176,6 +214,7 @@ class GridOverlay(QGraphicsView):
                 # Si aucun objet, on met "NULL"
                 if obj is None:
                     obj = "NULL"
+                # On exporte bien le nom du rayon (clé du mapping)
                 data.append({
                     "row": row,
                     "col": col,
