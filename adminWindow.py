@@ -313,7 +313,6 @@ class AdminWindow(QWidget):
         self.produit_categorie_map = {}
         self.categories = set()
         try:
-            # On reçoit le contenu JSON, pas un chemin
             data = json.loads(articles_json_content)
             for categorie, produits in data.items():
                 print(f"[AdminWindow] Catégorie chargée : {categorie} ({len(produits)} produits)")
@@ -437,7 +436,6 @@ class AdminWindow(QWidget):
             if categorie and nom in self.produit_categorie_map:
                 del self.produit_categorie_map[nom]
             self.stocks_list.takeItem(self.stocks_list.row(item))
-            # Correction : on récupère le chemin du fichier JSON, pas le contenu
             conn = sqlite3.connect("market_tracer.db")
             c = conn.cursor()
             c.execute("SELECT chemin FROM shops WHERE user_id=?", (self.user_id,))
@@ -457,7 +455,6 @@ class AdminWindow(QWidget):
                 with open(chemin_json, "w", encoding="utf-8") as f:
                     json.dump(data, f, ensure_ascii=False, indent=2)
                 print("[AdminWindow] Article supprimé et JSON mis à jour")
-                # Recharge la liste depuis le fichier mis à jour
                 try:
                     with open(chemin_json, "r", encoding="utf-8") as f:
                         articles_json_content = f.read()
