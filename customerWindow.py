@@ -1,62 +1,64 @@
 # ==============================================================
+
 # Market Tracer - Page client
+
+# Développé par Noé Colin
+# Dernière modification : 11/06/2025
+
 # ==============================================================
-# Importations
+
+# Importations des modules nécessaires
 from PyQt6.QtWidgets import (
     QApplication, QWidget, QLabel, QVBoxLayout, QHBoxLayout, QFrame, QPushButton, QListWidget,
-    QLineEdit, QCheckBox, QSpinBox, QGroupBox, QGridLayout, QMenuBar, QMenu, QFileDialog, QComboBox
+    QLineEdit, QMenuBar, QFileDialog, QComboBox
 )
 from PyQt6.QtGui import QFont, QIcon
 from PyQt6.QtCore import Qt
 import sys
 import json
 
-class AdminWindow(QWidget):
+# =============================================================
+
+# Fenêtre client
+
+# =============================================================
+class CustomerWindow(QWidget):
     def __init__(self):
         super().__init__()
         self.setWindowTitle("Market Tracer - Client")
         self.setWindowIcon(QIcon("img/chariot.png"))
-        self.resize(1400, 900) 
+        self.resize(1400, 900)
         self.setMinimumSize(1000, 700)
-        self.setStyleSheet("background: #fff;") 
         self.setup_ui()
 
     def setup_ui(self):
+        # Layout principal vertical
         main_layout = QVBoxLayout(self)
         main_layout.setContentsMargins(5, 5, 5, 5)
         main_layout.setSpacing(0)
 
-        # Menu déroulant
+        # Barre de menus en haut
         menubar = QMenuBar()
-        menubar.setStyleSheet("""
-            QMenuBar { background: #f7f7fb; color: #222; font-size: 20px; font-weight: bold; }
-            QMenuBar::item { background: #f7f7fb; color: #222; }
-            QMenuBar::item:selected { background: #e0e0e0; }
-            QMenu { background: #fff; color: #222; }
-            QMenu::item:selected { background: #e0e0e0; color: #222; }
-        """)
 
-        # Fichier
+        # Menus principaux
         fichier_menu = menubar.addMenu("Fichier")
         fichier_menu.addAction("Ouvrir")
         fichier_menu.addAction("Charger")
         fichier_menu.addAction("Fermer")
         fichier_menu.addAction("Exporter")
 
-        # Liste
         liste_menu = menubar.addMenu("Liste")
         liste_menu.addAction("Ajouter")
         liste_menu.addAction("Retirer")
         liste_menu.addAction("Importer")
         liste_menu.addAction("Exporter")
 
-        # Aide
         aide_menu = menubar.addMenu("Aide")
         aide_menu.addAction("À propos")
         aide_menu.addAction("Documentation")
         aide_menu.addAction("Licence")
 
-        # Bouton déconnexion à droite du menubar
+        # Bouton déconnexion
         btn_deconnexion = QPushButton("Déconnexion")
         btn_deconnexion.setStyleSheet("background: #ff3c2f; color: #fff; font-weight: bold; padding: 4px 16px; border-radius: 6px;")
         btn_deconnexion.clicked.connect(self.deconnexion)
@@ -64,7 +66,15 @@ class AdminWindow(QWidget):
 
         main_layout.addWidget(menubar)
 
-        # Partie centrale
+        # Ligne horizontale
+        hline_menu = QFrame()
+        hline_menu.setFrameShape(QFrame.Shape.HLine)
+        hline_menu.setFrameShadow(QFrame.Shadow.Sunken)
+        hline_menu.setLineWidth(1)
+        hline_menu.setMidLineWidth(0)
+        main_layout.addWidget(hline_menu)
+
+        # Layout horizontal
         center_layout = QHBoxLayout()
         center_layout.setSpacing(16)
 
@@ -72,71 +82,65 @@ class AdminWindow(QWidget):
         left_col = QVBoxLayout()
         left_col.setSpacing(10)
 
-        # Produits disponibles
         prod_label = QLabel("Produits disponibles")
         prod_label.setFont(QFont("Arial", 12, QFont.Weight.Bold))
-        prod_label.setStyleSheet("color: #222;")
         left_col.addWidget(prod_label)
 
-        # Saisir produit
-        saisir_label = QLabel("Saisissez un produit")
+        saisir_label = QLabel("Recherchez un produit")
         saisir_label.setFont(QFont("Arial", 10))
-        saisir_label.setStyleSheet("color: #222;")
         left_col.addWidget(saisir_label)
         saisir_input = QLineEdit()
-        saisir_input.setStyleSheet("color: #222; background: #fff;")
         left_col.addWidget(saisir_input)
 
-        # Boutons stock
-        btn_ajouter = QPushButton("Ajouter à mon stock")
-        btn_ajouter.setStyleSheet("background: #4be39a; color: #222; font-weight: bold; min-height: 32px;")
-        btn_retirer = QPushButton("Retirer de mon stock")
-        btn_retirer.setStyleSheet("background: #ff3c2f; color: #222; font-weight: bold; min-height: 32px;")
+        btn_ajouter = QPushButton("Ajouter à ma liste")
+        btn_ajouter.setMinimumHeight(32)
+        btn_retirer = QPushButton("Retirer de ma liste")
+        btn_retirer.setMinimumHeight(32)
         left_col.addWidget(btn_ajouter)
         left_col.addWidget(btn_retirer)
 
         # Filtre par catégorie
         self.filtre_combo = QComboBox()
-        self.filtre_combo.setStyleSheet("background: #ededed; color: #222; font-weight: bold;")
         self.filtre_combo.addItem("Toutes les catégories")
         self.filtre_combo.currentTextChanged.connect(self.filtrer_stocks)
         left_col.addWidget(self.filtre_combo)
 
-        # Vos stocks
-        stocks_label = QLabel("Vos stocks")
+        # Liste des produits sélectionnés
+        stocks_label = QLabel("Votre liste")
         stocks_label.setFont(QFont("Arial", 11, QFont.Weight.Bold))
-        stocks_label.setStyleSheet("color: #222;")
         left_col.addWidget(stocks_label)
 
-        # Bouton pour choisir un fichier JSON
         btn_choisir_fichier = QPushButton("Choisir un fichier JSON")
-        btn_choisir_fichier.setStyleSheet("background: #ededed; color: #222; font-weight: bold;")
         btn_choisir_fichier.clicked.connect(self.ouvrir_fichier_json)
         left_col.addWidget(btn_choisir_fichier)
 
         self.stocks_list = QListWidget()
-        self.stocks_list.setStyleSheet("background: #ededed; color: #222; font-size: 15px;")
         left_col.addWidget(self.stocks_list)
 
         self.stocks_list.itemClicked.connect(self.afficher_details_produit)
-        self.produit_categorie_map = {}  
+        self.produit_categorie_map = {}
 
         left_col.addStretch()
         left_frame = QFrame()
         left_frame.setLayout(left_col)
         left_frame.setMinimumWidth(240)
         left_frame.setMaximumWidth(320)
-        left_frame.setStyleSheet("background: #f7f7fb; border-radius: 8px;")
         center_layout.addWidget(left_frame, stretch=0)
 
-        # Colonne centrale
+        # Barre verticale gauche
+        vline1 = QFrame()
+        vline1.setFrameShape(QFrame.Shape.VLine)
+        vline1.setFrameShadow(QFrame.Shadow.Sunken)
+        vline1.setLineWidth(1)
+        vline1.setMidLineWidth(0)
+        center_layout.addWidget(vline1)
+
+        # Plan du magasin
         plan_col = QVBoxLayout()
         plan_label = QLabel("Plan du magasin")
         plan_label.setFont(QFont("Arial", 12, QFont.Weight.Bold))
-        plan_label.setStyleSheet("color: #222;")
         plan_col.addWidget(plan_label)
         plan_frame = QFrame()
-        plan_frame.setStyleSheet("background: #888; border-radius: 8px;")
         plan_frame.setMinimumSize(600, 400)
         plan_col.addWidget(plan_frame, stretch=1)
         plan_col.addStretch()
@@ -144,38 +148,47 @@ class AdminWindow(QWidget):
         plan_widget.setLayout(plan_col)
         center_layout.addWidget(plan_widget, stretch=2)
 
+        # Barre verticale droite
+        vline2 = QFrame()
+        vline2.setFrameShape(QFrame.Shape.VLine)
+        vline2.setFrameShadow(QFrame.Shadow.Sunken)
+        vline2.setLineWidth(1)
+        vline2.setMidLineWidth(0)
+        center_layout.addWidget(vline2)
+
         # Colonne droite
         right_col = QVBoxLayout()
-        
-        # Boutons parcours
+        right_col.setSpacing(15)
+
         btn_generer = QPushButton("Générer mon parcours")
-        btn_generer.setStyleSheet("background: #4be39a; color: #222; font-weight: bold; min-height: 32px;")
+        btn_generer.setMinimumHeight(32)
         btn_effacer = QPushButton("Effacer mon parcours")
-        btn_effacer.setStyleSheet("background: #ff3c2f; color: #222; font-weight: bold; min-height: 32px;")
+        btn_effacer.setMinimumHeight(32)
         btn_exporter = QPushButton("Exporter mon parcours")
-        btn_exporter.setStyleSheet("background: #aaaaaa; color: #222; font-weight: bold; min-height: 32px;")
+        btn_exporter.setMinimumHeight(32)
+
+        # Ajoute les boutons sans espace entre eux
         right_col.addWidget(btn_generer)
         right_col.addWidget(btn_effacer)
         right_col.addWidget(btn_exporter)
+        right_col.addStretch()
 
         right_widget = QWidget()
         right_widget.setLayout(right_col)
-        right_widget.setStyleSheet("background: #f7f7fb; border-radius: 8px;")
         right_widget.setMinimumWidth(220)
         right_widget.setMaximumWidth(300)
-
-        # Ajouter la colonne droite au layout central
         center_layout.addWidget(right_widget)
 
         main_layout.addLayout(center_layout)
 
         # Barre d'état
         self.status_bar = QLabel("Prêt")
-        self.status_bar.setStyleSheet("background: #ededed; color: #222; padding: 6px; border-radius: 4px;")
         self.status_bar.setAlignment(Qt.AlignmentFlag.AlignLeft)
         main_layout.addWidget(self.status_bar)
 
+    # Ouvre un fichier JSON et charge les produits
     def ouvrir_fichier_json(self):
+        """Ouvre un fichier JSON et charge les produits."""
         file_dialog = QFileDialog(self)
         file_dialog.setNameFilter("Fichiers JSON (*.json)")
         if file_dialog.exec():
@@ -184,7 +197,9 @@ class AdminWindow(QWidget):
                 self.afficher_stocks_depuis_json(filenames[0])
                 self.status_bar.setText(f"Fichier chargé : {filenames[0]}")
 
+    # Affiche les produits du fichier JSON dans la liste
     def afficher_stocks_depuis_json(self, chemin):
+        """Affiche les produits du fichier JSON dans la liste."""
         self.stocks_list.clear()
         self.produit_categorie_map = {}
         self.categories = set()
@@ -196,7 +211,6 @@ class AdminWindow(QWidget):
                     for produit in produits:
                         self.stocks_list.addItem(produit)
                         self.produit_categorie_map[produit] = categorie
-            # Remplir le menu déroulant des catégories
             self.filtre_combo.blockSignals(True)
             self.filtre_combo.clear()
             self.filtre_combo.addItem("Toutes les catégories")
@@ -208,13 +222,17 @@ class AdminWindow(QWidget):
             self.stocks_list.addItem("Erreur de lecture du fichier")
             self.status_bar.setText("Erreur lors du chargement du fichier.")
 
+    # Affiche les détails du produit sélectionné
     def afficher_details_produit(self, item):
+        """Affiche les détails du produit sélectionné."""
         produit = item.text()
         categorie = self.produit_categorie_map.get(produit, "Inconnu")
         self.produit_label.setText(f"Produit : {produit}")
         self.categorie_label.setText(f"Catégorie : {categorie}")
 
+    # Filtre la liste des produits selon la catégorie sélectionnée
     def filtrer_stocks(self, categorie):
+        """Filtre la liste des produits selon la catégorie sélectionnée."""
         self.stocks_list.clear()
         if not hasattr(self, "produit_categorie_map"):
             return
@@ -226,18 +244,19 @@ class AdminWindow(QWidget):
                 if cat == categorie:
                     self.stocks_list.addItem(produit)
 
+    # Déconnecte l'utilisateur et retourne à la fenêtre de connexion
     def deconnexion(self):
-        from main import LoginWindow  
+        """Déconnecte l'utilisateur et retourne à la fenêtre de connexion."""
+        from main import LoginWindow
         self.close()
         self.login_window = LoginWindow()
         self.login_window.show()
-
 
 # ==============================================================
 # Lancement de l'application
 # ==============================================================
 if __name__ == "__main__":
     app = QApplication(sys.argv)
-    window = AdminWindow()
+    window = CustomerWindow()
     window.show()
     sys.exit(app.exec())
