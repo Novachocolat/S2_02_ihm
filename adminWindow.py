@@ -1,6 +1,11 @@
 # ==============================================================
+
 # Market Tracer - Page gérant
+# Développé par Lysandre Pace--Boulnois
+# Dernière modification : 11/06/2025
+
 # ==============================================================
+
 # Importations
 from PyQt6.QtWidgets import (
     QApplication, QWidget, QLabel, QVBoxLayout, QHBoxLayout, QFrame, QPushButton, QListWidget,
@@ -13,8 +18,12 @@ import sys
 import json
 import sqlite3
 import platform
+
 # ==============================================================
+
 # Fenêtre d'ajout d'article
+
+# =============================================================
 
 class AddArticleDialog(QDialog):
     def __init__(self, categories, parent=None):
@@ -38,11 +47,14 @@ class AddArticleDialog(QDialog):
 
         self.setLayout(layout)
 
+    # Récupère les données saisies
     def get_data(self):
         return self.nom_input.text(), self.categorie_combo.currentText()
 
 # ==============================================================
+
 # Fenêtre principale du gérant
+
 # ==============================================================
 
 class AdminWindow(QWidget):
@@ -55,6 +67,7 @@ class AdminWindow(QWidget):
         self.setMinimumSize(1000, 700)
         self.setup_ui()
 
+    # Initialise l'interface principale
     def setup_ui(self):
         main_layout = QVBoxLayout(self)
         main_layout.setContentsMargins(5, 5, 5, 5)
@@ -181,7 +194,7 @@ class AdminWindow(QWidget):
         left_frame.setMaximumWidth(320)
         center_layout.addWidget(left_frame, stretch=0)
 
-        # === Barre verticale de séparation gauche-centre ===
+        # Barre verticale gauche
         vline1 = QFrame()
         vline1.setFrameShape(QFrame.Shape.VLine)
         vline1.setFrameShadow(QFrame.Shadow.Sunken)
@@ -202,7 +215,7 @@ class AdminWindow(QWidget):
         plan_widget.setLayout(plan_col)
         center_layout.addWidget(plan_widget, stretch=2)
 
-        # === Barre verticale de séparation centre-droite ===
+        # Barre verticale droite
         vline2 = QFrame()
         vline2.setFrameShape(QFrame.Shape.VLine)
         vline2.setFrameShadow(QFrame.Shadow.Sunken)
@@ -224,7 +237,7 @@ class AdminWindow(QWidget):
         plan_box.setLayout(plan_box_layout)
         right_col.addWidget(plan_box)
 
-        # Espacement entre les blocs
+        # Espacement
         right_col.addSpacing(10)
 
         # Quadrillage
@@ -294,6 +307,7 @@ class AdminWindow(QWidget):
         else:
             self.status_bar.setText("Aucun fichier d'articles associé à ce magasin.")
 
+    # Ouvre un fichier JSON et charge les articles
     def ouvrir_fichier_json(self):
         file_dialog = QFileDialog(self)
         file_dialog.setNameFilter("Fichiers JSON (*.json)")
@@ -303,6 +317,7 @@ class AdminWindow(QWidget):
                 self.afficher_stocks_depuis_json(filenames[0])
                 self.status_bar.setText(f"Fichier chargé : {filenames[0]}")
 
+    # Affiche les articles du fichier JSON
     def afficher_stocks_depuis_json(self, chemin):
         self.stocks_list.clear()
         self.produit_categorie_map = {}
@@ -315,7 +330,6 @@ class AdminWindow(QWidget):
                     for produit in produits:
                         self.stocks_list.addItem(produit)
                         self.produit_categorie_map[produit] = categorie
-            # Remplir le menu déroulant des catégories
             self.filtre_combo.blockSignals(True)
             self.filtre_combo.clear()
             self.filtre_combo.addItem("Toutes les catégories")
@@ -327,12 +341,14 @@ class AdminWindow(QWidget):
             self.stocks_list.addItem("Erreur de lecture du fichier")
             self.status_bar.setText("Erreur lors du chargement du fichier.")
 
+    # Affiche les détails du produit sélectionné
     def afficher_details_produit(self, item):
         produit = item.text()
         categorie = self.produit_categorie_map.get(produit, "Inconnu")
         self.produit_label.setText(f"Produit : {produit}")
         self.categorie_label.setText(f"Catégorie : {categorie}")
 
+    # Filtre la liste des articles selon la catégorie
     def filtrer_stocks(self, categorie):
         self.stocks_list.clear()
         if not hasattr(self, "produit_categorie_map"):
@@ -342,14 +358,15 @@ class AdminWindow(QWidget):
             if (categorie == "Toutes les catégories" or cat == categorie) and texte in produit.lower():
                 self.stocks_list.addItem(produit)
 
+    # Déconnecte l'utilisateur
     def deconnexion(self):
         from main import LoginWindow  
         self.close()
         self.login_window = LoginWindow()
         self.login_window.show()
 
+    # Récupérer le magasin du gérant connecté
     def recuperer_magasins(self, user_id):
-        """Exemple pour récupérer les magasins du gérant connecté (dans AdminWindow ou ailleurs)"""
         conn = sqlite3.connect("market_tracer.db")
         c = conn.cursor()
         c.execute("SELECT * FROM shops WHERE user_id=?", (user_id,))
@@ -357,12 +374,12 @@ class AdminWindow(QWidget):
         conn.close()
         return shops
 
+    # Ouvre la boîte de dialogue d'ajout d'article
     def ouvrir_dialog_ajout_article(self):
         dialog = AddArticleDialog(self.categories, self)
         if dialog.exec():
             nom, categorie = dialog.get_data()
             if nom and categorie:
-                # Ajoute l'article à la liste et à la map interne
                 self.stocks_list.addItem(nom)
                 self.produit_categorie_map[nom] = categorie
                 self.categories.add(categorie)
@@ -374,7 +391,6 @@ class AdminWindow(QWidget):
                     self.filtre_combo.addItem(cat)
                 self.filtre_combo.blockSignals(False)
 
-                # Récupère le chemin du fichier JSON associé au magasin
                 conn = sqlite3.connect("market_tracer.db")
                 c = conn.cursor()
                 c.execute("SELECT articles_json FROM shops WHERE user_id=?", (self.user_id,))
@@ -382,7 +398,6 @@ class AdminWindow(QWidget):
                 conn.close()
                 if result and result[0]:
                     chemin_json = result[0]
-                    # Ajoute l'article au fichier JSON
                     try:
                         with open(chemin_json, "r", encoding="utf-8") as f:
                             data = json.load(f)
@@ -398,6 +413,7 @@ class AdminWindow(QWidget):
             else:
                 QMessageBox.warning(self, "Erreur", "Veuillez remplir tous les champs.")
 
+    # Retire l'article sélectionné
     def retirer_article_selectionne(self):
         item = self.stocks_list.currentItem()
         if not item:
@@ -411,12 +427,10 @@ class AdminWindow(QWidget):
         msg_box.setStandardButtons(QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No)
         reply = msg_box.exec()
         if reply == QMessageBox.StandardButton.Yes:
-            # Retire de la liste interne
             categorie = self.produit_categorie_map.get(nom)
             if categorie and nom in self.produit_categorie_map:
                 del self.produit_categorie_map[nom]
             self.stocks_list.takeItem(self.stocks_list.row(item))
-            # Mise à jour du JSON
             conn = sqlite3.connect("market_tracer.db")
             c = conn.cursor()
             c.execute("SELECT articles_json FROM shops WHERE user_id=?", (self.user_id,))
@@ -429,7 +443,6 @@ class AdminWindow(QWidget):
                         data = json.load(f)
                 except Exception:
                     data = {}
-                # Retrait de l'article
                 if categorie in data and nom in data[categorie]:
                     data[categorie].remove(nom)
                     if not data[categorie]:
@@ -439,9 +452,9 @@ class AdminWindow(QWidget):
                 self.afficher_stocks_depuis_json(chemin_json)
             self.status_bar.setText(f"Article '{nom}' retiré du stock.")
 
+    # Ouvre la fenêtre de modification du magasin
     def ouvrir_modifier_magasin(self):
         from createShopWindow import CreateShopWindow
-        # Récupère les infos du magasin
         conn = sqlite3.connect("market_tracer.db")
         c = conn.cursor()
         c.execute("SELECT nom, auteur, date_creation, apropos, chemin, articles_json FROM shops WHERE user_id=?", (self.user_id,))
@@ -460,9 +473,9 @@ class AdminWindow(QWidget):
         dialog = CreateShopWindow(self.user_id, self, shop_data)
         if dialog.exec():
             self.status_bar.setText("Magasin modifié avec succès.")
-            # Mettre à jour les stocks si nécessaire
             self.afficher_stocks_depuis_json(dialog.json_input.text())
 
+    # Recherche les articles
     def rechercher_stocks(self, texte):
         texte = texte.lower()
         categorie = self.filtre_combo.currentText()
@@ -471,8 +484,8 @@ class AdminWindow(QWidget):
             if (categorie == "Toutes les catégories" or cat == categorie) and texte in produit.lower():
                 self.stocks_list.addItem(produit)
 
+    # Ouvre la fenêtre de gestion des employés
     def ouvrir_gestion_employes(self):
-        # Récupère le shop_id du gérant connecté
         conn = sqlite3.connect("market_tracer.db")
         c = conn.cursor()
         c.execute("SELECT id FROM shops WHERE user_id=?", (self.user_id,))
@@ -485,11 +498,14 @@ class AdminWindow(QWidget):
         else:
             QMessageBox.warning(self, "Erreur", "Aucun magasin associé à ce compte.")
 
-# ==============================================================
+# ==========================================================
+
 # Fenêtre de gestion des employés
-# =============================================================
+
+# ==========================================================
 
 class EmployeeManagerDialog(QDialog):
+    # Initialise la fenêtre
     def __init__(self, shop_id, parent=None):
         super().__init__(parent)
         self.setWindowTitle("Gérer les employés")
@@ -516,6 +532,7 @@ class EmployeeManagerDialog(QDialog):
 
         self.refresh()
 
+    # Rafraîchit la liste des employés
     def refresh(self):
         self.list.clear()
         conn = sqlite3.connect("market_tracer.db")
@@ -525,6 +542,7 @@ class EmployeeManagerDialog(QDialog):
             self.list.addItem(f"{emp_id} - {username}")
         conn.close()
 
+    # Ajout d'un nouvel employé
     def add_employee(self):
         dialog = EmployeeEditDialog(parent=self)
         if dialog.exec():
@@ -536,6 +554,7 @@ class EmployeeManagerDialog(QDialog):
             conn.close()
             self.refresh()
 
+    # Modifie l'employé sélectionné
     def edit_employee(self):
         item = self.list.currentItem()
         if not item:
@@ -552,6 +571,7 @@ class EmployeeManagerDialog(QDialog):
             conn.close()
             self.refresh()
 
+    # Supprime l'employé sélectionné
     def delete_employee(self):
         item = self.list.currentItem()
         if not item:
@@ -567,11 +587,14 @@ class EmployeeManagerDialog(QDialog):
             conn.close()
             self.refresh()
 
-# ==============================================================
+# ==========================================================
+
 # Fenêtre de dialogue pour ajouter ou modifier un employé
-# =============================================================
+
+# ==========================================================
 
 class EmployeeEditDialog(QDialog):
+    # Initialise la boîte de dialogue
     def __init__(self, parent=None):
         super().__init__(parent)
         self.setWindowTitle("Employé")
@@ -586,12 +609,15 @@ class EmployeeEditDialog(QDialog):
         btns.rejected.connect(self.reject)
         layout.addWidget(btns)
 
+    # Récupère les données saisies
     def get_data(self):
         return self.user_input.text(), self.pass_input.text()
-    
-# ==============================================================
+
+# ==========================================================
+
 # Fonction pour détecter le thème sombre du système
-# =============================================================
+
+# =========================================================
 
 def is_dark_theme():
     import os
@@ -624,9 +650,11 @@ def is_dark_theme():
         except Exception:
             return False
 
-# ==============================================================
+# ==========================================================
+
 # Lancement de l'application
-# ==============================================================
+
+# ==========================================================
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)

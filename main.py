@@ -1,6 +1,11 @@
 # ==============================================================
+
 # Market Tracer - Page de connexion
+# Développée par L. Pace--Boulnois et D. Melocco
+# Dernière modification : 11/06/2025
+
 # ==============================================================
+
 # Importations
 import sys, random as rand
 import sqlite3
@@ -14,9 +19,10 @@ from adminWindow import AdminWindow
 from employeeWindow import EmployeeWindow
 from customerWindow import CustomerWindow
 from createShopWindow import CreateShopWindow
-# ==============================================================
 
+# ==============================================================
 # Création de la base de données et de la table des utilisateurs
+
 def init_db():
     conn = sqlite3.connect("market_tracer.db")
     c = conn.cursor()
