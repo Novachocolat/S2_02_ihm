@@ -1,8 +1,8 @@
 # ==============================================================
 
 # Market Tracer - À propos
-# Développée par D. Melocco
-# Dernière modification : 11/06/2025
+# Développée par D. Melocco / S.Leclercq-Speter
+# Dernière modification : 11/06/2025 17h54
 
 # ==============================================================
 
@@ -43,16 +43,20 @@ class AboutWindow(QWidget):
         version_label = QLabel("Version 1")
         version_label.setFont(QFont("Arial", 12))
         version_label.setStyleSheet("color: #888;")
-        version_label.setAlignment(Qt.AlignmentFlag.AlignHCenter)
+        version_label.setAlignment(Qt.AlignmentFlag.AlignCenter)  # centre horizontal et vertical
         main_layout.addWidget(version_label)
 
         # Description
         desc = QLabel(
-            "Description à écrire..\n"
+            "Market Tracer est un outil compétent qui aide à la \n"
+            "gestion des stocks des supermarchés et qui permet\n"
+            "à leurs clients fidèles de faire leurs courses efficacement\n\n"
+            "Ce Logiciel a été développé par :\n"
+            "D. Melocco / L. Pace--Boulnois / S. Leclercq-Speter / N. Colin \n"
         )
-        desc.setFont(QFont("Arial", 10))
+        desc.setFont(QFont("Arial", 12))
         desc.setWordWrap(True)
-        desc.setAlignment(Qt.AlignmentFlag.AlignTop)
+        desc.setAlignment(Qt.AlignmentFlag.AlignCenter)  # centre horizontal et vertical
         main_layout.addWidget(desc)
 
 # ==============================================================
