@@ -181,8 +181,6 @@ class LoginWindow(QWidget):
 
         # Partie droite (image)
         right_frame = QFrame()
-        # SUPPRIMER la ligne suivante pour laisser le background natif :
-        # right_frame.setStyleSheet("background: #f7f7fb;")
         right_frame.setMinimumWidth(300)
         right_layout = QVBoxLayout(right_frame)
         right_layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
