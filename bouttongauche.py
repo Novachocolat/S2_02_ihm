@@ -33,7 +33,6 @@ class GridOverlay(QGraphicsView):
             "Fruits": "🍎",
             "Légumes": "🥦",
             "Viandes": "🍖",
-            "Poisson": "🐟",
             "Poissons": "🐟",
             "Boulangerie": "🥖",
             "Fromages": "🧀",
