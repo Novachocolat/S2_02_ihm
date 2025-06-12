@@ -101,7 +101,21 @@ class CreateShopWindow(QDialog):
         btn_creer.clicked.connect(self.finish)
         left_layout.addSpacing(10)
         left_layout.addWidget(btn_creer, alignment=Qt.AlignmentFlag.AlignHCenter)
-        btn_creer.setStyleSheet("background-color: #4be39a; color: white; padding: 10px; border-radius: 5px;")
+        btn_creer.setStyleSheet("""
+                QPushButton {
+                    background: #4be39a;
+                    color: #fff;
+                    border-radius: 6px;
+                    min-width: 100px;
+                    min-height: 36px;
+                    font-size: 16px;
+                }
+                QPushButton:checked {
+                    border: 2px solid #222;
+                    background: #111;
+                    color: #fff;
+                }
+            """)
 
         main_layout.addWidget(left_frame, stretch=3)
 

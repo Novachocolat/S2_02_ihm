@@ -134,10 +134,6 @@ class CustomerWindow(QWidget):
         stocks_label.setFont(QFont("Arial", 11, QFont.Weight.Bold))
         left_col.addWidget(stocks_label)
 
-        btn_choisir_fichier = QPushButton("Choisir un fichier JSON")
-        btn_choisir_fichier.clicked.connect(self.ouvrir_fichier_json)
-        left_col.addWidget(btn_choisir_fichier)
-
         self.stocks_list = QListWidget()
         left_col.addWidget(self.stocks_list, stretch=1)
 
