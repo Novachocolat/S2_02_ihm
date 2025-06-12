@@ -99,6 +99,18 @@ class CreateShopWindow(QDialog):
         btn_creer = QPushButton("Créer / Modifier")
         btn_creer.setFont(QFont("Arial", 16, QFont.Weight.Bold))
         btn_creer.clicked.connect(self.finish)
+        btn_creer.setStyleSheet("""
+            QPushButton {
+                background: #4be39a;
+                color: #fff;
+                border-radius: 4px;
+                min-height: 36px;
+                font-size: 18px;
+            }
+            QPushButton:pressed {
+                background: #888;
+            }
+        """)
         left_layout.addSpacing(10)
         left_layout.addWidget(btn_creer, alignment=Qt.AlignmentFlag.AlignHCenter)
 
