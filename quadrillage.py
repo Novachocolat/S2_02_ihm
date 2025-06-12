@@ -7,7 +7,7 @@ from PyQt6.QtWidgets import (
     QApplication, QMainWindow, QFileDialog, QGraphicsView,
     QGraphicsScene, QGraphicsPixmapItem, QVBoxLayout,
     QWidget, QSlider, QPushButton, QHBoxLayout, QGroupBox,
-    QMessageBox, QListWidget, QListWidgetItem, QLabel, QToolTip
+    QMessageBox, QListWidget, QListWidgetItem, QLabel 
 )
 from PyQt6.QtGui import QDrag, QPixmap, QFont, QBrush, QPen, QColor
 from PyQt6.QtCore import QMimeData, Qt, QRectF
@@ -109,9 +109,8 @@ class GridOverlay(QGraphicsView):
             self.scene.addRect(cell_rect, QPen(Qt.PenStyle.NoPen), QBrush(color))
 
             if (row, col) in self.objects_in_cells:
-                obj_data = self.objects_in_cells[(row, col)]
-                category = obj_data["category"]
-                emoji = self.emoji_mapping.get(category, "")
+                obj = self.objects_in_cells[(row, col)]
+                emoji = self.emoji_mapping.get(obj, "")
                 text_item = self.scene.addText(emoji)
                 font = QFont()
                 font.setPointSize(int(self.grid_size * 0.6))
@@ -199,29 +198,14 @@ class GridOverlay(QGraphicsView):
 
     # Gère le mouvement de la souris
     def mouseMoveEvent(self, event):
-        scene_pos = self.mapToScene(event.pos())
-        col = int(scene_pos.x() // self.grid_size)
-        row = int(scene_pos.y() // self.grid_size)
-        cell_key = (row, col)
-
         if self.is_panning and self.last_pan_point:
             delta = event.pos() - self.last_pan_point
             self.last_pan_point = event.pos()
             self.horizontalScrollBar().setValue(self.horizontalScrollBar().value() - delta.x())
             self.verticalScrollBar().setValue(self.verticalScrollBar().value() - delta.y())
         elif self.is_painting:
+            scene_pos = self.mapToScene(event.pos())
             self.color_cell_at_position(scene_pos)
-        else:
-            if self.colored_cells.get(cell_key) == self.color_types['Rayon']:
-                obj_data = self.objects_in_cells.get(cell_key)
-                if obj_data:
-                    product_name = obj_data["product"]
-                    QToolTip.showText(event.globalPosition().toPoint(), f"Produit : {product_name}", self)
-                else:
-                    QToolTip.hideText()
-            else:
-                QToolTip.hideText()
-
 
     # Gère le relâchement de la souris
     def mouseReleaseEvent(self, event):
@@ -245,30 +229,37 @@ class GridOverlay(QGraphicsView):
             return
 
         data = event.mimeData().text()
-        # On récupère la catégorie et le produit depuis le texte drag & drop
-        if "::" in data:
-            category, product = data.split("::", 1)
-            obj_name = product.strip()  # <-- ici on prend le nom du produit et non la catégorie
-        else:
+        try:
+            obj = json.loads(data)
+            if isinstance(obj, dict) and "name" in obj:
+                obj_name = obj["name"]
+            elif isinstance(obj, str):
+                obj_name = obj
+            else:
+                obj_name = str(obj)
+        except Exception:
             obj_name = data.strip().replace('"', '').replace("'", "").strip()
 
-        # On garde l'emoji sur la catégorie pour l'affichage graphique
-        category_name = category.strip() if "::" in data else "Autre"
+        if obj_name not in self.emoji_mapping:
+            for rayon in self.emoji_mapping:
+                if rayon in obj_name:
+                    obj_name = rayon
+                    break
+            else:
+                obj_name = "Autre"
 
-        if category_name not in self.emoji_mapping:
-            category_name = "Autre"
-
+        # Calculer la position de la case
         scene_pos = self.mapToScene(event.position().toPoint())
         col = int(scene_pos.x() // self.grid_size)
         row = int(scene_pos.y() // self.grid_size)
         cell_key = (row, col)
 
+        # Vérifier si la case est un rayon
         if self.colored_cells.get(cell_key) == self.color_types["Rayon"]:
-            self.objects_in_cells[cell_key] = {"category": category_name, "product": obj_name}
+            self.objects_in_cells[cell_key] = obj_name
             self.draw_grid()
         else:
             QMessageBox.warning(self, "Attention", "Vous ne pouvez déposer que sur des Rayons (bleus).")
-
 
     # Exporte vers un fichier JSON
     def export_cells_to_json(self, path):
