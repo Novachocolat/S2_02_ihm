@@ -13,7 +13,6 @@ from PyQt6.QtWidgets import (
 )
 from PyQt6.QtGui import QPixmap, QFont, QIcon
 from PyQt6.QtCore import Qt
-import markdown
 
 # ==============================================================
 # Page Documentation
@@ -55,7 +54,6 @@ class DocWindow(QWidget):
         try:
             with open("DOC.md", encoding="utf-8") as f:
                 readme_content = f.read()
-            html_content = markdown.markdown(readme_content)
         except Exception as e:
             html_content = "<b>README.md introuvable ou erreur de lecture.</b><br><br>" + str(e)
         doc_browser.setHtml(html_content)

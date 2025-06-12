@@ -9,10 +9,9 @@
 # Importations
 from PyQt6.QtWidgets import (
     QApplication, QWidget, QLabel, QVBoxLayout, QHBoxLayout, QFrame, QPushButton, QListWidget,
-    QLineEdit, QCheckBox, QSpinBox, QGroupBox, QMenuBar, QComboBox,
-    QDialog, QFormLayout, QDialogButtonBox, QMessageBox, QFileDialog, QSlider
+    QLineEdit, QGroupBox, QMenuBar, QComboBox, QMessageBox, QFileDialog, QSlider
 )
-from PyQt6.QtGui import QFont, QIcon, QGuiApplication
+from PyQt6.QtGui import QFont, QIcon
 from PyQt6.QtCore import Qt, QByteArray, QBuffer
 import sys
 import json
@@ -21,7 +20,7 @@ import platform
 from addArticleDialog import AddArticleDialog
 from shopManagerDialog import ShopManagerDialog
 from employeeManagerDialog import EmployeeManagerDialog
-from quadrillage import GridOverlay  # Ajoute cette importation en haut du fichier
+from quadrillage import GridOverlay
 
 # ==============================================================
 # Fenêtre principale du gérant
