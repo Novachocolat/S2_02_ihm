@@ -64,9 +64,14 @@ class CustomerWindow(QWidget):
         liste_menu.addAction("Exporter")
 
         aide_menu = menubar.addMenu("Aide")
-        aide_menu.addAction("À propos")
-        aide_menu.addAction("Documentation")
-        aide_menu.addAction("Licence")
+        action_about = aide_menu.addAction("À propos")
+        action_doc = aide_menu.addAction("Documentation")
+        action_licence = aide_menu.addAction("Licence")
+
+        # Connexion des actions du menu Aide
+        action_about.triggered.connect(self.open_about)
+        action_doc.triggered.connect(self.open_doc)
+        action_licence.triggered.connect(self.open_licence)
 
         # Bouton déconnexion
         btn_deconnexion = QPushButton("Déconnexion")
@@ -322,6 +327,23 @@ class CustomerWindow(QWidget):
         self.login_window = LoginWindow()
         self.login_window.show()
 
+    # Ouvre la fenêtre "À propos"
+    def open_about(self):
+        from aboutWindow import AboutWindow
+        self.about_window = AboutWindow()
+        self.about_window.show()
+
+    # Ouvre la fenêtre "Documentation"
+    def open_doc(self):
+        from docWindow import DocWindow
+        self.doc_window = DocWindow()
+        self.doc_window.show()
+
+    # Ouvre la fenêtre "Licence"
+    def open_licence(self):
+        from licenceWindow import LicenceWindow
+        self.licence_window = LicenceWindow()
+        self.licence_window.show()
 # ==============================================================
 # Lancement de l'application
 # ==============================================================
