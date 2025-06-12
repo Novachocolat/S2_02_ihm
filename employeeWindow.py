@@ -12,10 +12,12 @@ from PyQt6.QtWidgets import (
     QApplication, QWidget, QLabel, QVBoxLayout, QHBoxLayout, QFrame, QPushButton, QListWidget,
     QLineEdit, QMenuBar, QFileDialog, QComboBox, QGroupBox
 )
-from PyQt6.QtGui import QFont, QIcon, QGuiApplication
+from PyQt6.QtGui import QFont, QIcon, QGuiApplication, QPixmap
 from PyQt6.QtCore import Qt
+from quadrillage import GridOverlay
 import sys
 import json
+import sqlite3
 
 # =============================================================
 
@@ -164,9 +166,11 @@ class EmployeeWindow(QWidget):
         plan_label = QLabel("Plan du magasin")
         plan_label.setFont(QFont("Arial", 12, QFont.Weight.Bold))
         plan_col.addWidget(plan_label)
-        plan_frame = QFrame()
-        plan_frame.setMinimumSize(600, 400)
-        plan_col.addWidget(plan_frame, stretch=1)
+        
+        self.grid_overlay = GridOverlay()
+        self.grid_overlay.setEnabled(False)  # Désactive toute interaction (sauf zoom)
+        plan_col.addWidget(self.grid_overlay, stretch=1)
+        
         plan_col.addStretch()
         plan_widget = QWidget()
         plan_widget.setLayout(plan_col)
@@ -343,6 +347,21 @@ class EmployeeWindow(QWidget):
         from licenceWindow import LicenceWindow
         self.licence_window = LicenceWindow()
         self.licence_window.show()
+
+    def charger_plan_depuis_bdd(self, shop_id):
+        conn = sqlite3.connect("market_tracer.db")
+        c = conn.cursor()
+        c.execute("SELECT plan_image, plan_json FROM shops WHERE id=?", (shop_id,))
+        result = c.fetchone()
+        conn.close()
+        if result:
+            plan_image_data, plan_json = result
+            if plan_image_data:
+                pixmap = QPixmap()
+                pixmap.loadFromData(plan_image_data)
+                self.grid_overlay.load_pixmap(pixmap)
+            if plan_json:
+                self.grid_overlay.import_cells_from_json_content(plan_json)
 # ==============================================================
 # Lancement de l'application
 # ==============================================================

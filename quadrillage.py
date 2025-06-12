@@ -13,12 +13,13 @@ from PyQt6.QtWidgets import (
     QMessageBox, QListWidget, QListWidgetItem, QLabel 
 )
 from PyQt6.QtGui import QDrag, QPixmap, QFont, QBrush, QPen, QColor
-from PyQt6.QtCore import QMimeData, Qt, QRectF
+from PyQt6.QtCore import QMimeData, Qt, QRectF, pyqtSignal
 
 # ==============================================================
 
 # Image avec grille et cellules coloriées
 class GridOverlay(QGraphicsView):
+    grid_modified = pyqtSignal()
     def __init__(self):
         super().__init__()
         self.scene = QGraphicsScene(self)
@@ -135,6 +136,8 @@ class GridOverlay(QGraphicsView):
             self.scene.addLine(0, y, rect.width(), y, pen)
             y += self.grid_size
 
+        self.grid_modified.emit()  # Remplace l'appel direct au parent
+
     # Définit la taille de la grille
     def set_grid_size(self, size):
         self.grid_size = size
@@ -143,6 +146,7 @@ class GridOverlay(QGraphicsView):
     # Définit le mode de déplacement
     def set_pan_mode(self, enable):
         self.is_panning = enable
+        self.pan_mode = enable 
         if enable:
             self.setCursor(Qt.CursorShape.OpenHandCursor)
         else:
@@ -188,21 +192,35 @@ class GridOverlay(QGraphicsView):
 
     # Drag & Drop
     def mousePressEvent(self, event):
-        if not self.image_item:
+        if getattr(self, "read_only", False):
+            return
+        if self.image_item is None:
+            return
+        if self.pan_mode:
+            self._pan = True
+            self._pan_start = event.pos()
             return
 
-        if self.is_panning:
-            if event.button() == Qt.MouseButton.LeftButton:
-                self.setCursor(Qt.CursorShape.ClosedHandCursor)
-                self.last_pan_point = event.pos()
-        else:
-            if event.button() == Qt.MouseButton.LeftButton:
-                self.is_painting = True
-                scene_pos = self.mapToScene(event.pos())
-                self.color_cell_at_position(scene_pos)
+        if event.button() == Qt.MouseButton.LeftButton:
+            self.is_painting = True  # Active le mode peinture
+            pos = self.mapToScene(event.pos())
+            rect = self.image_item.boundingRect()
+            if not rect.contains(pos):
+                return
+            col = int(pos.x() // self.grid_size)
+            row = int(pos.y() // self.grid_size)
+            if (0 <= col < int(rect.width() // self.grid_size)) and (0 <= row < int(rect.height() // self.grid_size)):
+                if self.current_color_type == 'Gomme':
+                    self.colored_cells.pop((row, col), None)
+                    self.objects_in_cells.pop((row, col), None)
+                elif self.current_color_type:
+                    self.colored_cells[(row, col)] = self.color_types[self.current_color_type]
+                self.draw_grid()
 
     # Gère le mouvement de la souris
     def mouseMoveEvent(self, event):
+        if getattr(self, "read_only", False):
+            return
         if self.is_panning and self.last_pan_point:
             delta = event.pos() - self.last_pan_point
             self.last_pan_point = event.pos()
@@ -210,15 +228,28 @@ class GridOverlay(QGraphicsView):
             self.verticalScrollBar().setValue(self.verticalScrollBar().value() - delta.y())
         elif self.is_painting:
             scene_pos = self.mapToScene(event.pos())
-            self.color_cell_at_position(scene_pos)
+            rect = self.image_item.boundingRect()
+            if not rect.contains(scene_pos):
+                return
+            col = int(scene_pos.x() // self.grid_size)
+            row = int(scene_pos.y() // self.grid_size)
+            if (0 <= col < int(rect.width() // self.grid_size)) and (0 <= row < int(rect.height() // self.grid_size)):
+                if self.current_color_type == 'Gomme':
+                    self.colored_cells.pop((row, col), None)
+                    self.objects_in_cells.pop((row, col), None)
+                elif self.current_color_type:
+                    self.colored_cells[(row, col)] = self.color_types[self.current_color_type]
+                self.draw_grid()
 
     # Gère le relâchement de la souris
     def mouseReleaseEvent(self, event):
+        if getattr(self, "read_only", False):
+            return
         if self.is_panning:
             self.setCursor(Qt.CursorShape.OpenHandCursor)
             self.last_pan_point = None
         elif event.button() == Qt.MouseButton.LeftButton:
-            self.is_painting = False
+            self.is_painting = False  # Désactive le mode peinture
 
     # Gère le drag 
     def dragEnterEvent(self, event):
@@ -326,6 +357,27 @@ class GridOverlay(QGraphicsView):
         self.zoom_factor = factor
         self.resetTransform()
         self.scale(factor, factor)
+
+    def set_read_only(self, read_only=True):
+        self.setDragMode(QGraphicsView.DragMode.NoDrag)
+        self.setInteractive(False)
+        self.setEnabled(True)
+        self.read_only = read_only
+
+    def mousePressEvent(self, event):
+        if getattr(self, "read_only", False):
+            return
+        super().mousePressEvent(event)
+
+    def mouseMoveEvent(self, event):
+        if getattr(self, "read_only", False):
+            return
+        super().mouseMoveEvent(event)
+
+    def mouseReleaseEvent(self, event):
+        if getattr(self, "read_only", False):
+            return
+        super().mouseReleaseEvent(event)
 
 # Récupérer le texte brut
 class DraggableListWidget(QListWidget):

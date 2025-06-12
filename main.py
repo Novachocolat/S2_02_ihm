@@ -49,9 +49,16 @@ def init_db():
             chemin TEXT,
             articles_json TEXT,
             user_id INTEGER,
+            plan_json TEXT,
             FOREIGN KEY(user_id) REFERENCES users(id)
         )
     """)
+    # Ajout de la colonne plan_json si elle n'existe pas déjà (pour migration)
+    try:
+        c.execute("ALTER TABLE shops ADD COLUMN plan_json TEXT")
+    except sqlite3.OperationalError:
+        pass
+
     # S'assure que la colonne articles_json existe
     try:
         c.execute("ALTER TABLE shops ADD COLUMN articles_json TEXT")
@@ -62,7 +69,6 @@ def init_db():
         c.execute("ALTER TABLE shops ADD COLUMN user_id INTEGER")
     except sqlite3.OperationalError:
         pass
-
     
     # Ajout d'utilisateurs de test
     c.execute("INSERT OR IGNORE INTO users (username, password, role) VALUES ('gerant', '1234', 'Gérant')")

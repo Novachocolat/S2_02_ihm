@@ -12,7 +12,6 @@ class CreateShopWindow(QDialog):
         self.setWindowTitle("Market Tracer - Créer un magasin")
         self.setWindowIcon(QIcon("img/chariot.png"))
         self.setMinimumSize(900, 600)
-        # SUPPRIME la feuille de style globale ici pour laisser le thème du système agir
         self.user_id = user_id
         self.shop_data = shop_data
         self.setup_ui()
@@ -71,8 +70,8 @@ class CreateShopWindow(QDialog):
         left_layout.addWidget(apropos_label)
         left_layout.addWidget(self.apropos_input)
 
-        # Chemin du plan
-        chemin_label = QLabel("Chemin du Plan")
+        # Chemin du plan (fichier image)
+        chemin_label = QLabel("Plan du magasin (image)")
         chemin_layout = QHBoxLayout()
         self.chemin_input = QLineEdit()
         self.chemin_input.setReadOnly(True)
@@ -94,6 +93,18 @@ class CreateShopWindow(QDialog):
         json_layout.addWidget(btn_json)
         left_layout.addWidget(json_label)
         left_layout.addLayout(json_layout)
+
+        # Chemin du fichier JSON du plan (quadrillage)
+        plan_json_label = QLabel("Plan (quadrillage .json)")
+        plan_json_layout = QHBoxLayout()
+        self.plan_json_input = QLineEdit()
+        self.plan_json_input.setReadOnly(True)
+        btn_plan_json = QPushButton("Parcourir...")
+        btn_plan_json.clicked.connect(self.browse_plan_json)
+        plan_json_layout.addWidget(self.plan_json_input)
+        plan_json_layout.addWidget(btn_plan_json)
+        left_layout.addWidget(plan_json_label)
+        left_layout.addLayout(plan_json_layout)
 
         # Bouton Créer
         btn_creer = QPushButton("Créer / Modifier")
@@ -138,6 +149,7 @@ class CreateShopWindow(QDialog):
             self.apropos_input.setPlainText(self.shop_data.get("apropos", ""))
             self.chemin_input.setText(self.shop_data.get("chemin", ""))
             self.json_input.setText(self.shop_data.get("articles_json", ""))
+            self.plan_json_input.setText(self.shop_data.get("plan_json", ""))
 
     def finish(self):
         # Récupération des valeurs du formulaire
@@ -147,8 +159,9 @@ class CreateShopWindow(QDialog):
         apropos = self.apropos_input.toPlainText()
         chemin = self.chemin_input.text()
         json_path = self.json_input.text()
+        plan_json_path = self.plan_json_input.text()
 
-        # Lecture du contenu du fichier JSON (au lieu de stocker le chemin)
+        # Lecture du contenu du fichier JSON des articles
         articles_json_content = None
         if json_path:
             try:
@@ -157,13 +170,33 @@ class CreateShopWindow(QDialog):
             except Exception:
                 articles_json_content = None
 
-        # Insertion des données du magasin (on stocke le contenu JSON, pas le chemin)
+        # Lecture du contenu du fichier JSON du plan/quadrillage
+        plan_json_content = None
+        if plan_json_path:
+            try:
+                with open(plan_json_path, "r", encoding="utf-8") as f:
+                    plan_json_content = f.read()
+            except Exception:
+                plan_json_content = None
+
+        # Insertion ou mise à jour des données du magasin
         conn = sqlite3.connect("market_tracer.db")
         c = conn.cursor()
-        c.execute("""
-            INSERT INTO shops (nom, auteur, date_creation, apropos, chemin, articles_json, user_id)
-            VALUES (?, ?, ?, ?, ?, ?, ?)
-        """, (nom, auteur, date, apropos, chemin, articles_json_content, self.user_id))
+        # Vérifie si le magasin existe déjà pour cet utilisateur
+        c.execute("SELECT id FROM shops WHERE user_id=?", (self.user_id,))
+        row = c.fetchone()
+        if row:
+            # Mise à jour
+            c.execute("""
+                UPDATE shops SET nom=?, auteur=?, date_creation=?, apropos=?, chemin=?, articles_json=?, plan_json=?
+                WHERE user_id=?
+            """, (nom, auteur, date, apropos, chemin, articles_json_content, plan_json_content, self.user_id))
+        else:
+            # Insertion
+            c.execute("""
+                INSERT INTO shops (nom, auteur, date_creation, apropos, chemin, articles_json, plan_json, user_id)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            """, (nom, auteur, date, apropos, chemin, articles_json_content, plan_json_content, self.user_id))
         conn.commit()
         conn.close()
 
@@ -171,7 +204,8 @@ class CreateShopWindow(QDialog):
 
     def browse_file(self):
         dialog = QFileDialog(self)
-        dialog.setFileMode(QFileDialog.FileMode.Directory)
+        dialog.setFileMode(QFileDialog.FileMode.ExistingFile)
+        dialog.setNameFilter("Images (*.png *.jpg *.bmp *.jpeg)")
         if dialog.exec():
             selected = dialog.selectedFiles()
             if selected:
@@ -185,6 +219,15 @@ class CreateShopWindow(QDialog):
             selected = dialog.selectedFiles()
             if selected:
                 self.json_input.setText(selected[0])
+
+    def browse_plan_json(self):
+        dialog = QFileDialog(self)
+        dialog.setNameFilter("Fichiers JSON (*.json)")
+        dialog.setFileMode(QFileDialog.FileMode.ExistingFile)
+        if dialog.exec():
+            selected = dialog.selectedFiles()
+            if selected:
+                self.plan_json_input.setText(selected[0])
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)

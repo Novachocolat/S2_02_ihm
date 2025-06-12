@@ -10,10 +10,10 @@
 from PyQt6.QtWidgets import (
     QApplication, QWidget, QLabel, QVBoxLayout, QHBoxLayout, QFrame, QPushButton, QListWidget,
     QLineEdit, QCheckBox, QSpinBox, QGroupBox, QMenuBar, QComboBox,
-    QDialog, QFormLayout, QDialogButtonBox, QMessageBox, QFileDialog
+    QDialog, QFormLayout, QDialogButtonBox, QMessageBox, QFileDialog, QSlider
 )
 from PyQt6.QtGui import QFont, QIcon, QGuiApplication
-from PyQt6.QtCore import Qt
+from PyQt6.QtCore import Qt, QByteArray, QBuffer
 import sys
 import json
 import sqlite3
@@ -277,9 +277,55 @@ class AdminWindow(QWidget):
         btn_gomme.clicked.connect(lambda: self.grid_overlay.set_current_color('Gomme'))
         outils_layout.addWidget(btn_gomme)
 
+        # Bouton Se déplacer
+        btn_deplacer = QPushButton("Se déplacer")
+        btn_deplacer.setMinimumHeight(25)
+        btn_deplacer.clicked.connect(lambda: self.grid_overlay.set_pan_mode(True))
+        outils_layout.addWidget(btn_deplacer)
+
+        # Les autres boutons de couleur doivent désactiver le mode déplacement
+        btn_rayon.clicked.connect(lambda: self.grid_overlay.set_pan_mode(False))
+        btn_caisse.clicked.connect(lambda: self.grid_overlay.set_pan_mode(False))
+        btn_entree.clicked.connect(lambda: self.grid_overlay.set_pan_mode(False))
+        btn_mur.clicked.connect(lambda: self.grid_overlay.set_pan_mode(False))
+        btn_gomme.clicked.connect(lambda: self.grid_overlay.set_pan_mode(False))
+
         outils_box.setLayout(outils_layout)
         right_col.addWidget(outils_box)
-        
+
+        # === Bloc ZOOM ===
+        zoom_box = QGroupBox("Zoom")
+        zoom_box.setMinimumWidth(220)
+        zoom_layout = QVBoxLayout()
+        zoom_layout.setContentsMargins(10, 10, 10, 10)
+
+        # Zoom sur la grille (taille des cases)
+        label_zoom_grid = QLabel("Zoom grille :\nAjuste la taille des cases de la grille")
+        label_zoom_grid.setWordWrap(True)
+        zoom_layout.addWidget(label_zoom_grid)
+
+        self.slider_grid = QSlider(Qt.Orientation.Horizontal)
+        self.slider_grid.setMinimum(25)
+        self.slider_grid.setMaximum(100)
+        self.slider_grid.setValue(self.grid_overlay.grid_size)
+        self.slider_grid.valueChanged.connect(lambda v: self.grid_overlay.set_grid_size(v))
+        zoom_layout.addWidget(self.slider_grid)
+
+        # Zoom global (zoom sur l'image et la grille)
+        label_zoom_global = QLabel("Zoom global :\nAgrandit ou réduit tout le plan")
+        label_zoom_global.setWordWrap(True)
+        zoom_layout.addWidget(label_zoom_global)
+
+        self.slider_zoom = QSlider(Qt.Orientation.Horizontal)
+        self.slider_zoom.setMinimum(10)
+        self.slider_zoom.setMaximum(300)
+        self.slider_zoom.setValue(100)
+        self.slider_zoom.valueChanged.connect(lambda v: self.grid_overlay.set_zoom(v / 100.0))
+        zoom_layout.addWidget(self.slider_zoom)
+
+        zoom_box.setLayout(zoom_layout)
+        right_col.addWidget(zoom_box)
+
         # Détail
         details_box = QGroupBox("Détail")
         details_box.setMinimumWidth(220)
@@ -311,13 +357,27 @@ class AdminWindow(QWidget):
         # Récupérer le magasin du gérant
         conn = sqlite3.connect("market_tracer.db")
         c = conn.cursor()
-        c.execute("SELECT articles_json FROM shops WHERE user_id=?", (self.user_id,))
+        c.execute("SELECT articles_json, plan_json, chemin FROM shops WHERE user_id=?", (self.user_id,))
         result = c.fetchone()
         conn.close()
-        if result and result[0]:
-            self.afficher_stocks_depuis_json(result[0])
+        if result:
+            articles_json, plan_json, plan_image_path = result
+
+            # Chargement des articles
+            if articles_json:
+                self.afficher_stocks_depuis_json(articles_json)
+            else:
+                self.status_bar.setText("Aucun article associé à ce magasin.")
+
+            # Chargement du plan image si disponible
+            if plan_image_path:
+                self.grid_overlay.load_image(plan_image_path)
+
+            # Chargement du quadrillage JSON si disponible
+            if plan_json:
+                self.grid_overlay.import_cells_from_json_content(plan_json)
         else:
-            self.status_bar.setText("Aucun article associé à ce magasin.")
+            self.status_bar.setText("Aucun magasin associé à ce compte.")
 
     def ouvrir_fichier_json(self):
         print("[AdminWindow] Ouverture d'un fichier JSON")
@@ -586,6 +646,26 @@ class AdminWindow(QWidget):
             QMessageBox.information(self, "Objets chargés", f"{len(data) if isinstance(data, list) else 'Plusieurs'} objets chargés.")
         except Exception as e:
             QMessageBox.warning(self, "Erreur", f"Erreur de chargement JSON : {e}")
+
+    def sauvegarder_plan_et_quadrillage(self):
+        # Récupère l'image du plan en binaire
+        plan_image_data = None
+        if self.grid_overlay.image_item:
+            pixmap = self.grid_overlay.image_item.pixmap()
+            ba = QByteArray()
+            buffer = QBuffer(ba)
+            buffer.open(QBuffer.OpenModeFlag.WriteOnly)
+            pixmap.save(buffer, "PNG")
+            plan_image_data = ba.data()
+        # Récupère le quadrillage au format JSON (en mémoire)
+        plan_json_content = self.grid_overlay.export_cells_to_json_string()
+        # Sauvegarde dans la BDD
+        conn = sqlite3.connect("market_tracer.db")
+        c = conn.cursor()
+        c.execute("UPDATE shops SET plan_image=?, plan_json=? WHERE user_id=?", (plan_image_data, plan_json_content, self.user_id))
+        conn.commit()
+        conn.close()
+        self.grid_overlay.grid_modified.connect(self.sauvegarder_plan_et_quadrillage)
 
 # ==============================================================
 
