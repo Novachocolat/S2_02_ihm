@@ -102,6 +102,7 @@ class GridOverlay(QGraphicsView):
 
         rect = self.image_item.boundingRect()
 
+        # Dessiner les cases colorées
         for (row, col), color in self.colored_cells.items():
             x = col * self.grid_size
             y = row * self.grid_size
@@ -204,6 +205,7 @@ class GridOverlay(QGraphicsView):
         row = int(scene_pos.y() // self.grid_size)
         cell_key = (row, col)
 
+        # Afficher l'info de la case
         if self.is_panning and self.last_pan_point:
             delta = event.pos() - self.last_pan_point
             self.last_pan_point = event.pos()
@@ -248,11 +250,11 @@ class GridOverlay(QGraphicsView):
         # On récupère la catégorie et le produit depuis le texte drag & drop
         if "::" in data:
             category, product = data.split("::", 1)
-            obj_name = product.strip()  # <-- ici on prend le nom du produit et non la catégorie
+            obj_name = product.strip()  
         else:
             obj_name = data.strip().replace('"', '').replace("'", "").strip()
 
-        # On garde l'emoji sur la catégorie pour l'affichage graphique
+        # On garde l'emoji sur la catégorie pour l'afficher dans le graphique
         category_name = category.strip() if "::" in data else "Autre"
 
         if category_name not in self.emoji_mapping:
@@ -277,6 +279,7 @@ class GridOverlay(QGraphicsView):
             "cells": []
         }
         
+        # On ajoute les cases colorées et les objets
         for (row, col), color in self.colored_cells.items():
             for type_str, type_color in self.color_types.items():
                 if color == type_color:
@@ -317,6 +320,7 @@ class GridOverlay(QGraphicsView):
 
             cells = data["cells"] if isinstance(data, dict) and "cells" in data else data
 
+            #On restaure les cases colorées
             for cell in cells:
                 row = cell.get("row")
                 col = cell.get("col")
@@ -524,7 +528,6 @@ class MainWindow(QMainWindow):
 
     # Importe les cases du JSON
     def import_cells(self):
-        # Vérifie qu'une image de plan est chargée
         if self.grid_view.image_item is None:
             QMessageBox.warning(self, "Erreur", "Veuillez d'abord charger une image de plan avant d'importer un JSON.")
             return
@@ -539,6 +542,7 @@ class MainWindow(QMainWindow):
         file_name, _ = QFileDialog.getOpenFileName(self, "Charger un JSON d'objets", "", "JSON (*.json)")
         if not file_name:
             return
+        # Vérifie que le fichier existe
         try:
             with open(file_name, "r", encoding="utf-8") as f:
                 data = json.load(f)
