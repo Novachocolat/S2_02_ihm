@@ -111,12 +111,14 @@ class AdminWindow(QWidget):
         btn_ajouter = QPushButton("Ajouter à mon stock")
         btn_ajouter.setObjectName("btn_ajouter")
         btn_ajouter.setFixedHeight(28)
+        btn_ajouter.setStyleSheet("background: #56E39F; ")
         btn_ajouter.clicked.connect(self.ouvrir_dialog_ajout_article)
         gestion_layout.addWidget(btn_ajouter)
 
         btn_retirer = QPushButton("Retirer de mon stock")
         btn_retirer.setObjectName("btn_retirer")
         btn_retirer.setFixedHeight(28)
+        btn_retirer.setStyleSheet("background: #FF6B3D; ")
         btn_retirer.clicked.connect(self.retirer_article_selectionne)
         gestion_layout.addWidget(btn_retirer)
 
@@ -198,19 +200,6 @@ class AdminWindow(QWidget):
         right_col = QVBoxLayout()
         right_col.setSpacing(18)  
 
-        # Plan
-        plan_box = QGroupBox("Plan")
-        plan_box.setMinimumWidth(220)
-        plan_box_layout = QVBoxLayout()
-        plan_box_layout.setContentsMargins(10, 10, 10, 10)  
-        plan_file_input = QLineEdit("Choisissez un fichier")
-        plan_box_layout.addWidget(plan_file_input)
-        plan_box.setLayout(plan_box_layout)
-        right_col.addWidget(plan_box)
-
-        # Espacement entre les blocs
-        right_col.addSpacing(10)
-
         # Quadrillage
         grid_box = QGroupBox("Quadrillage")
         grid_box.setMinimumWidth(220)
@@ -252,22 +241,27 @@ class AdminWindow(QWidget):
         
         # Bouton pour ouvrir une image
         btn_ouvrir_image = QPushButton("Ouvrir une image")
+        btn_ouvrir_image.setMinimumHeight(25)
         comm_layout.addWidget(btn_ouvrir_image)
         
         # Bouton pour Réinitialiser
         btn_reinitialiser = QPushButton("Réinitialiser")
+        btn_reinitialiser.setMinimumHeight(25)
         comm_layout.addWidget(btn_reinitialiser)
         
         # Bouton pour exporter en JSON
         btn_exporter = QPushButton("Exporter en JSON")
+        btn_exporter.setMinimumHeight(25)
         comm_layout.addWidget(btn_exporter)
         
         # Bouton pour importer en JSON
         btn_importer = QPushButton("Importer en JSON")
+        btn_importer.setMinimumHeight(25)
         comm_layout.addWidget(btn_importer)
         
         # Bouton pour charger JSON 
         btn_charger = QPushButton("Charger JSON Objets")
+        btn_charger.setMinimumHeight(25)
         comm_layout.addWidget(btn_charger)
         
         comm_box.setLayout(comm_layout)
@@ -281,22 +275,27 @@ class AdminWindow(QWidget):
         
         # Bouton Rayon(bleu)
         btn_rayon = QPushButton("Rayon (bleu)")
+        btn_rayon.setMinimumHeight(25)
         outils_layout.addWidget(btn_rayon)
         
         # Bouton Caisse(jaune)
         btn_caisse = QPushButton("Caisse (jaune)")
+        btn_caisse.setMinimumHeight(25)
         outils_layout.addWidget(btn_caisse)
         
         # Bouton Entrée(Rouge)
         btn_entree = QPushButton("Entrée (Rouge)")
+        btn_entree.setMinimumHeight(25)
         outils_layout.addWidget(btn_entree)
         
         # Bouton Mur(Gris)
         btn_mur = QPushButton("Mur (Gris)")
+        btn_mur.setMinimumHeight(25)
         outils_layout.addWidget(btn_mur)
         
         # Bouton Gomme
         btn_gomme = QPushButton("Gomme")
+        btn_gomme.setMinimumHeight(25)
         outils_layout.addWidget(btn_gomme)
         
         outils_box.setLayout(outils_layout)

@@ -13,8 +13,8 @@ from PyQt6.QtWidgets import (
     QApplication, QWidget, QLabel, QLineEdit, QPushButton, QHBoxLayout,
     QVBoxLayout, QGridLayout, QFrame, QMessageBox
 )
-from PyQt6.QtGui import QFont, QIcon, QPixmap
-from PyQt6.QtCore import Qt
+from PyQt6.QtGui import QFont, QIcon
+from PyQt6.QtCore import Qt 
 from adminWindow import AdminWindow
 from employeeWindow import EmployeeWindow
 from customerWindow import CustomerWindow
