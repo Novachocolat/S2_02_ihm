@@ -1,13 +1,18 @@
 # ==============================================================
+
 # Market Tracer - Page gérant
+# Développé par Lysandre Pace--Boulnois
+# Dernière modification : 11/06/2025
+
 # ==============================================================
+
 # Importations
 from PyQt6.QtWidgets import (
     QApplication, QWidget, QLabel, QVBoxLayout, QHBoxLayout, QFrame, QPushButton, QListWidget,
     QLineEdit, QCheckBox, QSpinBox, QGroupBox, QMenuBar, QComboBox,
     QDialog, QFormLayout, QDialogButtonBox, QMessageBox, QFileDialog
 )
-from PyQt6.QtGui import QFont, QIcon
+from PyQt6.QtGui import QFont, QIcon, QGuiApplication
 from PyQt6.QtCore import Qt
 import sys
 import json
@@ -31,7 +36,9 @@ class AdminWindow(QWidget):
         self.setMinimumSize(1000, 700)
         self.setup_ui()
 
+    # Initialise l'interface principale
     def setup_ui(self):
+        print("[AdminWindow] Construction de l'UI")
         main_layout = QVBoxLayout(self)
         main_layout.setContentsMargins(5, 5, 5, 5)
         main_layout.setSpacing(0)
@@ -104,12 +111,14 @@ class AdminWindow(QWidget):
         btn_ajouter = QPushButton("Ajouter à mon stock")
         btn_ajouter.setObjectName("btn_ajouter")
         btn_ajouter.setFixedHeight(28)
+        btn_ajouter.setStyleSheet("background: #56E39F; ")
         btn_ajouter.clicked.connect(self.ouvrir_dialog_ajout_article)
         gestion_layout.addWidget(btn_ajouter)
 
         btn_retirer = QPushButton("Retirer de mon stock")
         btn_retirer.setObjectName("btn_retirer")
         btn_retirer.setFixedHeight(28)
+        btn_retirer.setStyleSheet("background: #FF6B3D; ")
         btn_retirer.clicked.connect(self.retirer_article_selectionne)
         gestion_layout.addWidget(btn_retirer)
 
@@ -191,19 +200,6 @@ class AdminWindow(QWidget):
         right_col = QVBoxLayout()
         right_col.setSpacing(18)  
 
-        # Plan
-        plan_box = QGroupBox("Plan")
-        plan_box.setMinimumWidth(220)
-        plan_box_layout = QVBoxLayout()
-        plan_box_layout.setContentsMargins(10, 10, 10, 10)  
-        plan_file_input = QLineEdit("Choisissez un fichier")
-        plan_box_layout.addWidget(plan_file_input)
-        plan_box.setLayout(plan_box_layout)
-        right_col.addWidget(plan_box)
-
-        # Espacement entre les blocs
-        right_col.addSpacing(10)
-
         # Quadrillage
         grid_box = QGroupBox("Quadrillage")
         grid_box.setMinimumWidth(220)
@@ -235,10 +231,80 @@ class AdminWindow(QWidget):
         grid_box.setLayout(grid_layout)
         right_col.addWidget(grid_box)
 
-        right_col.addSpacing(10)
-
-        # Détails
-        details_box = QGroupBox("Détails")
+        
+        
+        # Commandes
+        comm_box = QGroupBox("Commandes")
+        comm_box.setMinimumWidth(220)
+        comm_layout = QVBoxLayout()
+        comm_layout.setContentsMargins(10, 10, 10, 10)
+        
+        # Bouton pour ouvrir une image
+        btn_ouvrir_image = QPushButton("Ouvrir une image")
+        btn_ouvrir_image.setMinimumHeight(25)
+        comm_layout.addWidget(btn_ouvrir_image)
+        
+        # Bouton pour Réinitialiser
+        btn_reinitialiser = QPushButton("Réinitialiser")
+        btn_reinitialiser.setMinimumHeight(25)
+        comm_layout.addWidget(btn_reinitialiser)
+        
+        # Bouton pour exporter en JSON
+        btn_exporter = QPushButton("Exporter en JSON")
+        btn_exporter.setMinimumHeight(25)
+        comm_layout.addWidget(btn_exporter)
+        
+        # Bouton pour importer en JSON
+        btn_importer = QPushButton("Importer en JSON")
+        btn_importer.setMinimumHeight(25)
+        comm_layout.addWidget(btn_importer)
+        
+        # Bouton pour charger JSON 
+        btn_charger = QPushButton("Charger JSON Objets")
+        btn_charger.setMinimumHeight(25)
+        comm_layout.addWidget(btn_charger)
+        
+        comm_box.setLayout(comm_layout)
+        right_col.addWidget(comm_box)
+        
+        # Outils
+        outils_box = QGroupBox("Outils")
+        outils_box.setMinimumWidth(220)
+        outils_layout = QVBoxLayout()
+        outils_layout.setContentsMargins(10, 10, 10, 10)
+        
+        # Bouton Rayon(bleu)
+        btn_rayon = QPushButton("Rayon (bleu)")
+        btn_rayon.setMinimumHeight(25)
+        outils_layout.addWidget(btn_rayon)
+        
+        # Bouton Caisse(jaune)
+        btn_caisse = QPushButton("Caisse (jaune)")
+        btn_caisse.setMinimumHeight(25)
+        outils_layout.addWidget(btn_caisse)
+        
+        # Bouton Entrée(Rouge)
+        btn_entree = QPushButton("Entrée (Rouge)")
+        btn_entree.setMinimumHeight(25)
+        outils_layout.addWidget(btn_entree)
+        
+        # Bouton Mur(Gris)
+        btn_mur = QPushButton("Mur (Gris)")
+        btn_mur.setMinimumHeight(25)
+        outils_layout.addWidget(btn_mur)
+        
+        # Bouton Gomme
+        btn_gomme = QPushButton("Gomme")
+        btn_gomme.setMinimumHeight(25)
+        outils_layout.addWidget(btn_gomme)
+        
+        outils_box.setLayout(outils_layout)
+        right_col.addWidget(outils_box)
+        
+        right_col.addSpacing(40)
+        
+        # Détail
+        details_box = QGroupBox("Détail")
         details_box.setMinimumWidth(220)
         details_layout = QVBoxLayout()
         details_layout.setContentsMargins(10, 10, 10, 10)
@@ -277,11 +343,13 @@ class AdminWindow(QWidget):
             self.status_bar.setText("Aucun article associé à ce magasin.")
 
     def ouvrir_fichier_json(self):
+        print("[AdminWindow] Ouverture d'un fichier JSON")
         file_dialog = QFileDialog(self)
         file_dialog.setNameFilter("Fichiers JSON (*.json)")
         if file_dialog.exec():
             filenames = file_dialog.selectedFiles()
             if filenames:
+                print(f"[AdminWindow] Fichier sélectionné : {filenames[0]}")
                 self.afficher_stocks_depuis_json(filenames[0])
                 self.status_bar.setText(f"Fichier chargé : {filenames[0]}")
 
@@ -308,24 +376,32 @@ class AdminWindow(QWidget):
             self.stocks_list.addItem("Erreur de lecture du JSON")
             self.status_bar.setText("Erreur lors du chargement des articles.")
 
+    # Affiche les détails du produit sélectionné
     def afficher_details_produit(self, item):
         produit = item.text()
         categorie = self.produit_categorie_map.get(produit, "Inconnu")
+        print(f"[AdminWindow] Détail produit sélectionné : {produit} (Catégorie : {categorie})")
         self.produit_label.setText(f"Produit : {produit}")
         self.categorie_label.setText(f"Catégorie : {categorie}")
 
+    # Filtre la liste des articles selon la catégorie
     def filtrer_stocks(self, categorie):
+        print(f"[AdminWindow] Filtrage des stocks sur la catégorie : {categorie}")
         self.stocks_list.clear()
         if not hasattr(self, "produit_categorie_map"):
+            print("[AdminWindow] Aucun mapping produit-catégorie")
             return
         texte = self.search_input.text().lower() if hasattr(self, "search_input") else ""
         for produit, cat in self.produit_categorie_map.items():
             if (categorie == "Toutes les catégories" or cat == categorie) and texte in produit.lower():
                 self.stocks_list.addItem(produit)
 
+    # Déconnecte l'utilisateur
     def deconnexion(self):
+        print("[AdminWindow] Déconnexion demandée")
         from main import LoginWindow  
         self.close()
+        print("[AdminWindow] Déconnexion d'un admin")
         self.login_window = LoginWindow()
         self.login_window.show()
 
