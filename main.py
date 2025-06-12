@@ -254,35 +254,29 @@ class LoginWindow(QWidget):
         user = c.fetchone()
         if user:
             if role == "Gérant":
+                # Vérifie si c'est la première connexion
+                conn = sqlite3.connect("market_tracer.db")
+                c = conn.cursor()
                 c.execute("SELECT first_login FROM users WHERE username=?", (username,))
                 first_login = c.fetchone()[0]
                 if first_login:
+                    # Récupère l'id du gérant
+                    conn = sqlite3.connect("market_tracer.db")
+                    c = conn.cursor()
                     c.execute("SELECT id FROM users WHERE username=?", (username,))
                     user_id = c.fetchone()[0]
+                    conn.close()
                     self.create_shop_window = CreateShopWindow(user_id, parent=self)
                     self.create_shop_window.exec()
                     self.open_admin_window()
+                    conn = sqlite3.connect("market_tracer.db")
+                    c = conn.cursor()
                     c.execute("UPDATE users SET first_login=0 WHERE username=?", (username,))
                     conn.commit()
                 else:
                     self.open_admin_window()
             elif role == "Employé":
-                print(f"[Login] Connexion employé : {username}")
-                c.execute("SELECT shop_id FROM users WHERE username=?", (username,))
-                shop_row = c.fetchone()
-                if shop_row and shop_row[0]:
-                    shop_id = shop_row[0]
-                    c.execute("SELECT articles_json, chemin FROM shops WHERE id=?", (shop_id,))
-                    shop_info = c.fetchone()
-                    if shop_info:
-                        articles_json, plan_path = shop_info
-                        self.employee_window = EmployeeWindow(articles_json, plan_path)
-                        self.employee_window.show()
-                        self.close()
-                    else:
-                        QMessageBox.warning(self, "Erreur", "Aucun magasin associé à ce compte employé.")
-                else:
-                    QMessageBox.warning(self, "Erreur", "Aucun magasin associé à ce compte employé.")
+                self.open_employee_window()
             self.close()
         else:
             self.error_label.setText("Nom d'utilisateur, mot de passe ou rôle incorrect.")
@@ -320,6 +314,7 @@ class LoginWindow(QWidget):
 
     # Ouvre la fenêtre d'administration pour le gérant
     def open_admin_window(self):
+        # Récupère l'id du gérant connecté
         conn = sqlite3.connect("market_tracer.db")
         c = conn.cursor()
         c.execute("SELECT id FROM users WHERE username=?", (self.user_input.text(),))
