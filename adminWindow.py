@@ -21,6 +21,7 @@ import platform
 from addArticleDialog import AddArticleDialog
 from shopManagerDialog import ShopManagerDialog
 from employeeManagerDialog import EmployeeManagerDialog
+from quadrillage import GridOverlay  # Ajoute cette importation en haut du fichier
 
 # ==============================================================
 # Fenêtre principale du gérant
@@ -185,9 +186,10 @@ class AdminWindow(QWidget):
         plan_label = QLabel("Plan du magasin")
         plan_label.setFont(QFont("Arial", 12, QFont.Weight.Bold))
         plan_col.addWidget(plan_label)
-        plan_frame = QFrame()
-        plan_frame.setMinimumSize(600, 400)
-        plan_col.addWidget(plan_frame, stretch=1)
+
+        # Ajoute le widget GridOverlay pour le plan et la grille
+        self.grid_overlay = GridOverlay()
+        plan_col.addWidget(self.grid_overlay, stretch=1)
         plan_col.addStretch()
         plan_widget = QWidget()
         plan_widget.setLayout(plan_col)
@@ -205,90 +207,83 @@ class AdminWindow(QWidget):
         right_col = QVBoxLayout()
         right_col.setSpacing(18)  
 
-        # Quadrillage
-        grid_box = QGroupBox("Quadrillage")
-        grid_box.setMinimumWidth(220)
-        grid_layout = QVBoxLayout()
-        grid_layout.setContentsMargins(10, 10, 10, 10)
-
-        # Bouton Afficher le quadrillage
-        grid_checkbox = QCheckBox("Afficher le quadrillage")
-        grid_layout.addWidget(grid_checkbox)
-
-        grid_box.setLayout(grid_layout)
-        right_col.addWidget(grid_box)
-
-        
-        
         # Commandes
         comm_box = QGroupBox("Commandes")
         comm_box.setMinimumWidth(220)
         comm_layout = QVBoxLayout()
         comm_layout.setContentsMargins(10, 10, 10, 10)
-        
+
         # Bouton pour ouvrir une image
         btn_ouvrir_image = QPushButton("Ouvrir une image")
         btn_ouvrir_image.setMinimumHeight(25)
+        btn_ouvrir_image.clicked.connect(self.ouvrir_image_plan)
         comm_layout.addWidget(btn_ouvrir_image)
-        
+
         # Bouton pour Réinitialiser
         btn_reinitialiser = QPushButton("Réinitialiser")
         btn_reinitialiser.setMinimumHeight(25)
+        btn_reinitialiser.clicked.connect(self.grid_overlay.reset_colored_cells)
         comm_layout.addWidget(btn_reinitialiser)
-        
+
         # Bouton pour exporter en JSON
         btn_exporter = QPushButton("Exporter en JSON")
         btn_exporter.setMinimumHeight(25)
+        btn_exporter.clicked.connect(self.exporter_quadrillage_json)
         comm_layout.addWidget(btn_exporter)
-        
+
         # Bouton pour importer en JSON
         btn_importer = QPushButton("Importer en JSON")
         btn_importer.setMinimumHeight(25)
+        btn_importer.clicked.connect(self.importer_quadrillage_json)
         comm_layout.addWidget(btn_importer)
-        
+
         # Bouton pour charger JSON 
         btn_charger = QPushButton("Charger JSON Objets")
         btn_charger.setMinimumHeight(25)
+        btn_charger.clicked.connect(self.charger_objets_json)
         comm_layout.addWidget(btn_charger)
-        
+
         comm_box.setLayout(comm_layout)
         right_col.addWidget(comm_box)
-        
+
         # Outils
         outils_box = QGroupBox("Outils")
         outils_box.setMinimumWidth(220)
         outils_layout = QVBoxLayout()
         outils_layout.setContentsMargins(10, 10, 10, 10)
-        
+
         # Bouton Rayon(bleu)
         btn_rayon = QPushButton("Rayon (bleu)")
         btn_rayon.setMinimumHeight(25)
+        btn_rayon.clicked.connect(lambda: self.grid_overlay.set_current_color('Rayon'))
         outils_layout.addWidget(btn_rayon)
-        
+
         # Bouton Caisse(jaune)
         btn_caisse = QPushButton("Caisse (jaune)")
         btn_caisse.setMinimumHeight(25)
+        btn_caisse.clicked.connect(lambda: self.grid_overlay.set_current_color('Caisse'))
         outils_layout.addWidget(btn_caisse)
-        
+
         # Bouton Entrée(Rouge)
         btn_entree = QPushButton("Entrée (Rouge)")
         btn_entree.setMinimumHeight(25)
+        btn_entree.clicked.connect(lambda: self.grid_overlay.set_current_color('Entrée'))
         outils_layout.addWidget(btn_entree)
-        
+
         # Bouton Mur(Gris)
         btn_mur = QPushButton("Mur (Gris)")
         btn_mur.setMinimumHeight(25)
+        btn_mur.clicked.connect(lambda: self.grid_overlay.set_current_color('Mur'))
         outils_layout.addWidget(btn_mur)
-        
+
         # Bouton Gomme
         btn_gomme = QPushButton("Gomme")
         btn_gomme.setMinimumHeight(25)
+        btn_gomme.clicked.connect(lambda: self.grid_overlay.set_current_color('Gomme'))
         outils_layout.addWidget(btn_gomme)
-        
+
         outils_box.setLayout(outils_layout)
         right_col.addWidget(outils_box)
-        
-        right_col.addSpacing(40)
         
         # Détail
         details_box = QGroupBox("Détail")
@@ -562,6 +557,41 @@ class AdminWindow(QWidget):
         self.licence_window = LicenceWindow()
         self.licence_window.show()
     
+    def ouvrir_image_plan(self):
+        file_name, _ = QFileDialog.getOpenFileName(self, "Choisir une image", "", "Images (*.png *.jpg *.bmp *.jpeg)")
+        if file_name:
+            self.grid_overlay.load_image(file_name)
+
+    def exporter_quadrillage_json(self):
+        if self.grid_overlay.image_item is None:
+            QMessageBox.warning(self, "Erreur", "Veuillez d'abord charger une image de plan avant d'exporter un JSON.")
+            return
+        file_name, _ = QFileDialog.getSaveFileName(self, "Exporter en JSON", "", "JSON (*.json)")
+        if file_name:
+            self.grid_overlay.export_cells_to_json(file_name)
+            QMessageBox.information(self, "Export", "Exportation réussie !")
+
+    def importer_quadrillage_json(self):
+        if self.grid_overlay.image_item is None:
+            QMessageBox.warning(self, "Erreur", "Veuillez d'abord charger une image de plan avant d'importer un JSON.")
+            return
+        file_name, _ = QFileDialog.getOpenFileName(self, "Importer JSON", "", "JSON (*.json)")
+        if file_name:
+            self.grid_overlay.import_cells_from_json(file_name)
+            QMessageBox.information(self, "Import", "Importation réussie !")
+
+    def charger_objets_json(self):
+        file_name, _ = QFileDialog.getOpenFileName(self, "Charger un JSON d'objets", "", "JSON (*.json)")
+        if not file_name:
+            return
+        try:
+            with open(file_name, "r", encoding="utf-8") as f:
+                data = json.load(f)
+            # Affiche les objets dans une boîte de dialogue ou une liste si besoin
+            QMessageBox.information(self, "Objets chargés", f"{len(data) if isinstance(data, list) else 'Plusieurs'} objets chargés.")
+        except Exception as e:
+            QMessageBox.warning(self, "Erreur", f"Erreur de chargement JSON : {e}")
+
 # ==============================================================
 
 # Fonction pour détecter le thème sombre du système
