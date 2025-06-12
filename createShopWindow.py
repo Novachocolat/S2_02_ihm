@@ -101,6 +101,7 @@ class CreateShopWindow(QDialog):
         btn_creer.clicked.connect(self.finish)
         left_layout.addSpacing(10)
         left_layout.addWidget(btn_creer, alignment=Qt.AlignmentFlag.AlignHCenter)
+        btn_creer.setStyleSheet("background-color: #4be39a; color: white; padding: 10px; border-radius: 5px;")
 
         main_layout.addWidget(left_frame, stretch=3)
 

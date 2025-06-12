@@ -210,24 +210,6 @@ class AdminWindow(QWidget):
         grid_checkbox = QCheckBox("Afficher le quadrillage")
         grid_layout.addWidget(grid_checkbox)
 
-        # Bouton Définir point d'entrée (mutuellement exclusif avec caisse)
-        btn_point_entree = QCheckBox("Définir comme point d'entrée")
-        grid_layout.addWidget(btn_point_entree)
-
-        # Bouton Définir caisse (mutuellement exclusif avec point d'entrée)
-        btn_caisse = QCheckBox("Définir comme caisse")
-        grid_layout.addWidget(btn_caisse)
-
-        # Empêcher les 2 cases d'être cochées en même temps
-        def exclusif_point_entree(state):
-            if state:
-                btn_caisse.setChecked(False)
-        def exclusif_caisse(state):
-            if state:
-                btn_point_entree.setChecked(False)
-        btn_point_entree.stateChanged.connect(lambda state: exclusif_point_entree(state == 2))
-        btn_caisse.stateChanged.connect(lambda state: exclusif_caisse(state == 2))
-
         grid_box.setLayout(grid_layout)
         right_col.addWidget(grid_box)
 
