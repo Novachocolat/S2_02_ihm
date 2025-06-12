@@ -296,9 +296,19 @@ class LoginWindow(QWidget):
 
     # Ouvre la fenêtre de sélection de magasin pour le client
     def open_client_window(self):
-        dlg = ShopSelectorDialog(self)
+        # On vérifie d'abord s'il existe au moins un magasin
+        conn = sqlite3.connect("market_tracer.db")
+        c = conn.cursor()
+        c.execute("SELECT COUNT(*) FROM shops")
         nb_shops = c.fetchone()[0]
-        if dlg.exec() and dlg.selected_shop_id :
+        conn.close()
+        if nb_shops == 0:
+            QMessageBox.warning(self, "Aucun magasin", "Aucun magasin n'est disponible pour les clients.")
+            return
+
+        # S'il y a au moins un magasin, on affiche le sélecteur
+        dlg = ShopSelectorDialog(self)
+        if dlg.exec() and dlg.selected_shop_id:
             shop_id = dlg.selected_shop_id
             conn = sqlite3.connect("market_tracer.db")
             c = conn.cursor()
@@ -308,15 +318,6 @@ class LoginWindow(QWidget):
             articles_json = result[0] if result else None
             self.client_window = CustomerWindow(articles_json)
             self.client_window.show()
-        else:
-            # Aucun magasin disponible ou aucun magasin sélectionné
-            conn = sqlite3.connect("market_tracer.db")
-            c = conn.cursor()
-            c.execute("SELECT COUNT(*) FROM shops")
-            nb_shops = c.fetchone()[0]
-            conn.close()
-            if nb_shops == 0:
-                QMessageBox.warning(self, "Aucun magasin", "Aucun magasin n'est disponible pour les clients.")
 
     # Ouvre la fenêtre d'administration pour le gérant
     def open_admin_window(self):
