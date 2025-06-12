@@ -2,12 +2,13 @@
 
 # Market Tracer - Page de connexion
 # Développée par L. Pace--Boulnois et D. Melocco
-# Dernière modification : 11/06/2025
+# Dernière modification : 12/06/2025
 
 # ==============================================================
 
 # Importations
-import sys, random as rand
+import sys
+import random as rand
 import sqlite3
 from PyQt6.QtWidgets import (
     QApplication, QWidget, QLabel, QLineEdit, QPushButton, QHBoxLayout,
@@ -22,59 +23,51 @@ from createShopWindow import CreateShopWindow
 from shopSelectorDialog import ShopSelectorDialog
 
 # ==============================================================
-# Création de la base de données et de la table des utilisateurs
+# Création de la base de données et des tables
 
 def init_db():
-    conn = sqlite3.connect("market_tracer.db")
-    c = conn.cursor()
-    c.execute('''
-        CREATE TABLE IF NOT EXISTS users (
-            id INTEGER PRIMARY KEY,
-            username TEXT UNIQUE,
-            password TEXT,
-            role TEXT,
-            shop_id INTEGER,
-            first_login INTEGER DEFAULT 1
-        )
-    ''')
+    with sqlite3.connect("market_tracer.db") as conn:
+        c = conn.cursor()
+        c.execute('''
+            CREATE TABLE IF NOT EXISTS users (
+                id INTEGER PRIMARY KEY,
+                username TEXT UNIQUE,
+                password TEXT,
+                role TEXT,
+                shop_id INTEGER,
+                first_login INTEGER DEFAULT 1
+            )
+        ''')
+        c.execute("""
+            CREATE TABLE IF NOT EXISTS shops (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                nom TEXT,
+                auteur TEXT,
+                date_creation TEXT,
+                apropos TEXT,
+                chemin TEXT,
+                articles_json TEXT,
+                user_id INTEGER,
+                plan_json TEXT,
+                FOREIGN KEY(user_id) REFERENCES users(id)
+            )
+        """)
+        # Ajout des colonnes si besoin (migration)
+        for col, typ in [
+            ("plan_json", "TEXT"),
+            ("articles_json", "TEXT"),
+            ("user_id", "INTEGER"),
+            ("plan_image", "BLOB")
+        ]:
+            try:
+                c.execute(f"ALTER TABLE shops ADD COLUMN {col} {typ}")
+            except sqlite3.OperationalError:
+                pass
+        # Ajout d'utilisateurs de test
+        c.execute("INSERT OR IGNORE INTO users (username, password, role) VALUES ('gerant', '1234', 'Gérant')")
+        c.execute("INSERT OR IGNORE INTO users (username, password, role) VALUES ('employe', 'abcd', 'Employé')")
+        conn.commit()
 
-    # Création de la base de données et de la table si besoin
-    c.execute("""
-        CREATE TABLE IF NOT EXISTS shops (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            nom TEXT,
-            auteur TEXT,
-            date_creation TEXT,
-            apropos TEXT,
-            chemin TEXT,
-            articles_json TEXT,
-            user_id INTEGER,
-            plan_json TEXT,
-            FOREIGN KEY(user_id) REFERENCES users(id)
-        )
-    """)
-    # Ajout de la colonne plan_json si elle n'existe pas déjà (pour migration)
-    try:
-        c.execute("ALTER TABLE shops ADD COLUMN plan_json TEXT")
-    except sqlite3.OperationalError:
-        pass
-
-    # S'assure que la colonne articles_json existe
-    try:
-        c.execute("ALTER TABLE shops ADD COLUMN articles_json TEXT")
-    except sqlite3.OperationalError:
-        pass
-
-    try:
-        c.execute("ALTER TABLE shops ADD COLUMN user_id INTEGER")
-    except sqlite3.OperationalError:
-        pass
-    
-    # Ajout d'utilisateurs de test
-    c.execute("INSERT OR IGNORE INTO users (username, password, role) VALUES ('gerant', '1234', 'Gérant')")
-    c.execute("INSERT OR IGNORE INTO users (username, password, role) VALUES ('employe', 'abcd', 'Employé')")
-    conn.commit()
-    conn.close()
 # ==============================================================
 # Page de connexion
 
@@ -219,7 +212,7 @@ class LoginWindow(QWidget):
         right_layout = QVBoxLayout(right_frame)
         right_layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
         img_label = QLabel()
-        pixmap = QPixmap("img/mt_banner_" + str(self.rand_banner) + ".png")
+        pixmap = QPixmap(f"img/mt_banner_{self.rand_banner}.png")
         pixmap = pixmap.scaled(300, 580, Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation)
         img_label.setPixmap(pixmap)
         img_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
@@ -254,87 +247,69 @@ class LoginWindow(QWidget):
         username = self.user_input.text()
         password = self.pass_input.text()
         role = self.selected_role
-        conn = sqlite3.connect("market_tracer.db")
-        c = conn.cursor()
-        c.execute("SELECT * FROM users WHERE username=? AND password=? AND role=?", (username, password, role))
-        user = c.fetchone()
-        if user:
-            if role == "Gérant":
-                c.execute("SELECT first_login FROM users WHERE username=?", (username,))
-                first_login = c.fetchone()[0]
-                if first_login:
-                    c.execute("SELECT id FROM users WHERE username=?", (username,))
-                    user_id = c.fetchone()[0]
-                    self.create_shop_window = CreateShopWindow(user_id, parent=self)
-                    self.create_shop_window.exec()
-                    self.open_admin_window()
-                    c.execute("UPDATE users SET first_login=0 WHERE username=?", (username,))
-                    conn.commit()
-                else:
-                    self.open_admin_window()
-            elif role == "Employé":
-                print(f"[Login] Connexion employé : {username}")
-                c.execute("SELECT shop_id FROM users WHERE username=?", (username,))
-                shop_row = c.fetchone()
-                if shop_row and shop_row[0]:
-                    shop_id = shop_row[0]
-                    c.execute("SELECT articles_json, chemin FROM shops WHERE id=?", (shop_id,))
-                    shop_info = c.fetchone()
-                    if shop_info:
-                        articles_json, plan_path = shop_info
-                        self.employee_window = EmployeeWindow(articles_json, plan_path)
-                        self.employee_window.show()
-                        self.close()
+        with sqlite3.connect("market_tracer.db") as conn:
+            c = conn.cursor()
+            c.execute("SELECT * FROM users WHERE username=? AND password=? AND role=?", (username, password, role))
+            user = c.fetchone()
+            if user:
+                if role == "Gérant":
+                    user_id, _, _, _, _, first_login = user
+                    if first_login:
+                        self.create_shop_window = CreateShopWindow(user_id, parent=self)
+                        self.create_shop_window.exec()
+                        self.open_admin_window(user_id)
+                        c.execute("UPDATE users SET first_login=0 WHERE id=?", (user_id,))
+                        conn.commit()
+                    else:
+                        self.open_admin_window(user_id)
+                elif role == "Employé":
+                    shop_id = user[4]
+                    if shop_id:
+                        c.execute("SELECT articles_json, chemin FROM shops WHERE id=?", (shop_id,))
+                        shop_info = c.fetchone()
+                        if shop_info:
+                            articles_json, plan_path = shop_info
+                            self.employee_window = EmployeeWindow(articles_json, plan_path)
+                            self.employee_window.show()
+                            self.close()
+                        else:
+                            QMessageBox.warning(self, "Erreur", "Aucun magasin associé à ce compte employé.")
                     else:
                         QMessageBox.warning(self, "Erreur", "Aucun magasin associé à ce compte employé.")
-                else:
-                    QMessageBox.warning(self, "Erreur", "Aucun magasin associé à ce compte employé.")
-            self.close()
-        else:
-            self.error_label.setText("Nom d'utilisateur, mot de passe ou rôle incorrect.")
-        conn.close()
+                self.close()
+            else:
+                self.error_label.setText("Nom d'utilisateur, mot de passe ou rôle incorrect.")
 
     # Lance la fenêtre client
     def enter_as_client(self):
-        print("Entrée en tant que client.")
         self.open_client_window()
         self.close()
 
     # Ouvre la fenêtre de sélection de magasin pour le client
     def open_client_window(self):
-        # On vérifie d'abord s'il existe au moins un magasin
-        conn = sqlite3.connect("market_tracer.db")
-        c = conn.cursor()
-        c.execute("SELECT COUNT(*) FROM shops")
-        nb_shops = c.fetchone()[0]
-        conn.close()
-        if nb_shops == 0:
-            QMessageBox.warning(self, "Aucun magasin", "Aucun magasin n'est disponible pour les clients.")
-            return
-
-        # S'il y a au moins un magasin, on affiche le sélecteur
+        with sqlite3.connect("market_tracer.db") as conn:
+            c = conn.cursor()
+            c.execute("SELECT COUNT(*) FROM shops")
+            nb_shops = c.fetchone()[0]
+            if nb_shops == 0:
+                QMessageBox.warning(self, "Aucun magasin", "Aucun magasin n'est disponible pour les clients.")
+                return
         dlg = ShopSelectorDialog(self)
         if dlg.exec() and dlg.selected_shop_id:
             shop_id = dlg.selected_shop_id
-            conn = sqlite3.connect("market_tracer.db")
-            c = conn.cursor()
-            c.execute("SELECT articles_json FROM shops WHERE id=?", (shop_id,))
-            result = c.fetchone()
-            conn.close()
-            articles_json = result[0] if result else None
-            self.client_window = CustomerWindow(articles_json)
+            with sqlite3.connect("market_tracer.db") as conn:
+                c = conn.cursor()
+                c.execute("SELECT articles_json FROM shops WHERE id=?", (shop_id,))
+                result = c.fetchone()
+                articles_json = result[0] if result else None
+            self.client_window = CustomerWindow(articles_json, shop_id)
             self.client_window.show()
 
     # Ouvre la fenêtre d'administration pour le gérant
-    def open_admin_window(self):
-        conn = sqlite3.connect("market_tracer.db")
-        c = conn.cursor()
-        c.execute("SELECT id FROM users WHERE username=?", (self.user_input.text(),))
-        user_id = c.fetchone()[0]
-        conn.close()
+    def open_admin_window(self, user_id):
         self.admin_window = AdminWindow(user_id)
         self.admin_window.show()
-    
+
     # Ouvre la fenêtre employé
     def open_employee_window(self):
         self.employee_window = EmployeeWindow()

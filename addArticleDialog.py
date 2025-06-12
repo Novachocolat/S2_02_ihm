@@ -1,3 +1,11 @@
+# ==============================================================
+#
+# Market Tracer - Boîte de dialogue d'ajout d'article
+# Développé par Lysandre Pace--Boulnois
+# Dernière modification : 12/06/2025
+#
+# ==============================================================
+
 from PyQt6.QtWidgets import QDialog, QLineEdit, QComboBox, QFormLayout, QDialogButtonBox
 from PyQt6.QtGui import QIcon
 

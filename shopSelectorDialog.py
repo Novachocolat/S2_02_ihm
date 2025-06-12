@@ -1,7 +1,16 @@
+# ==============================================================
+#
+# Market Tracer - Boîte de sélection de magasin
+# Développé par Lysandre Pace--Boulnois
+# Dernière modification : 12/06/2025
+#
+# ==============================================================
+
 import sqlite3
 from PyQt6.QtWidgets import QDialog, QVBoxLayout, QListWidget, QPushButton, QHBoxLayout, QMessageBox
 
 class ShopSelectorDialog(QDialog):
+    # Constructeur de la boîte de dialogue
     def __init__(self, parent=None):
         super().__init__(parent)
         self.setWindowTitle("Choisir un magasin")
@@ -25,6 +34,7 @@ class ShopSelectorDialog(QDialog):
 
         self.list.itemDoubleClicked.connect(self.accept)
 
+    # Remplit la liste des magasins depuis la base de données
     def populate_shops(self):
         conn = sqlite3.connect("market_tracer.db")
         c = conn.cursor()
@@ -33,6 +43,7 @@ class ShopSelectorDialog(QDialog):
             self.list.addItem(f"{shop_id} - {nom}")
         conn.close()
 
+    # Accepte la sélection et récupère l'identifiant du magasin
     def accept(self):
         item = self.list.currentItem()
         if item:

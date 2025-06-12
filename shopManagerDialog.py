@@ -1,7 +1,16 @@
+# ==============================================================
+#
+# Market Tracer - Boîte de gestion des magasins
+# Développé par Lysandre Pace--Boulnois
+# Dernière modification : 12/06/2025
+#
+# ==============================================================
+
 import sqlite3
 from PyQt6.QtWidgets import QDialog, QVBoxLayout, QListWidget, QHBoxLayout, QPushButton, QMessageBox
 
 class ShopManagerDialog(QDialog):
+    # Constructeur de la boîte de gestion des magasins
     def __init__(self, user_id, parent=None):
         super().__init__(parent)
         self.setWindowTitle("Mes magasins")
@@ -30,6 +39,7 @@ class ShopManagerDialog(QDialog):
 
         self.refresh()
 
+    # Rafraîchit la liste des magasins
     def refresh(self):
         self.list.clear()
         conn = sqlite3.connect("market_tracer.db")
@@ -39,24 +49,28 @@ class ShopManagerDialog(QDialog):
             self.list.addItem(f"{shop_id} - {nom}")
         conn.close()
 
+    # Récupère l'identifiant du magasin sélectionné
     def get_selected_shop_id(self):
         item = self.list.currentItem()
         if not item:
             return None
         return int(item.text().split(" - ")[0])
 
+    # Crée un nouveau magasin
     def create_shop(self):
         from createShopWindow import CreateShopWindow
         dlg = CreateShopWindow(self.user_id, self)
         dlg.exec()
         self.refresh()
 
+    # Charge le magasin sélectionné
     def load_shop(self):
         shop_id = self.get_selected_shop_id()
         if shop_id:
             self.accept()
             self.selected_shop_id = shop_id
 
+    # Modifie le magasin sélectionné
     def edit_shop(self):
         shop_id = self.get_selected_shop_id()
         if shop_id:
@@ -79,6 +93,7 @@ class ShopManagerDialog(QDialog):
                 dlg.exec()
                 self.refresh()
 
+    # Supprime le magasin sélectionné
     def delete_shop(self):
         shop_id = self.get_selected_shop_id()
         if shop_id:

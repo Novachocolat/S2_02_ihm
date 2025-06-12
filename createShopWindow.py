@@ -1,3 +1,11 @@
+# ==============================================================
+#
+# Market Tracer - Fenêtre de création/modification de magasin
+# Développé par Lysandre Pace--Boulnois
+# Dernière modification : 12/06/2025
+#
+# ==============================================================
+
 from PyQt6.QtWidgets import (
     QDialog, QLabel, QVBoxLayout, QHBoxLayout, QLineEdit, QTextEdit, QPushButton, QFrame, QFileDialog, QApplication, QDateEdit
 )
@@ -21,7 +29,7 @@ class CreateShopWindow(QDialog):
         main_layout.setContentsMargins(30, 30, 30, 30)
         main_layout.setSpacing(30)
 
-        # Partie gauche (formulaire)
+        # Partie gauche 
         left_frame = QFrame()
         left_layout = QVBoxLayout(left_frame)
         left_layout.setAlignment(Qt.AlignmentFlag.AlignTop)
@@ -32,7 +40,7 @@ class CreateShopWindow(QDialog):
         title.setFont(QFont("Arial", 24, QFont.Weight.Bold))
         left_layout.addWidget(title)
 
-        # Barre horizontale sous le titre (optionnelle)
+        # Barre horizontale 
         hline = QFrame()
         hline.setFrameShape(QFrame.Shape.HLine)
         hline.setFrameShadow(QFrame.Shadow.Sunken)
@@ -70,7 +78,7 @@ class CreateShopWindow(QDialog):
         left_layout.addWidget(apropos_label)
         left_layout.addWidget(self.apropos_input)
 
-        # Chemin du plan (fichier image)
+        # Plan magasin
         chemin_label = QLabel("Plan du magasin (image)")
         chemin_layout = QHBoxLayout()
         self.chemin_input = QLineEdit()
@@ -82,7 +90,7 @@ class CreateShopWindow(QDialog):
         left_layout.addWidget(chemin_label)
         left_layout.addLayout(chemin_layout)
 
-        # Chemin du fichier JSON des articles
+        # Chemin du fichier JSON
         json_label = QLabel("Articles (.json)")
         json_layout = QHBoxLayout()
         self.json_input = QLineEdit()
@@ -94,7 +102,7 @@ class CreateShopWindow(QDialog):
         left_layout.addWidget(json_label)
         left_layout.addLayout(json_layout)
 
-        # Chemin du fichier JSON du plan (quadrillage)
+        # Chemin du fichier JSON pour quadrillage
         plan_json_label = QLabel("Plan (quadrillage .json)")
         plan_json_layout = QHBoxLayout()
         self.plan_json_input = QLineEdit()
@@ -130,7 +138,7 @@ class CreateShopWindow(QDialog):
 
         main_layout.addWidget(left_frame, stretch=3)
 
-        # Partie droite (image ou illustration)
+        # Partie droite
         right_frame = QFrame()
         right_frame.setMinimumWidth(260)
         right_layout = QVBoxLayout(right_frame)
@@ -151,8 +159,8 @@ class CreateShopWindow(QDialog):
             self.json_input.setText(self.shop_data.get("articles_json", ""))
             self.plan_json_input.setText(self.shop_data.get("plan_json", ""))
 
+    # Fonction appelée lors du clic sur le bouton "Créer / Modifier"
     def finish(self):
-        # Récupération des valeurs du formulaire
         nom = self.nom_input.text()
         auteur = self.auteur_input.text()
         date = self.date_input.date().toString("dd/MM/yyyy")
@@ -161,7 +169,6 @@ class CreateShopWindow(QDialog):
         json_path = self.json_input.text()
         plan_json_path = self.plan_json_input.text()
 
-        # Lecture du contenu du fichier JSON des articles
         articles_json_content = None
         if json_path:
             try:
@@ -170,7 +177,6 @@ class CreateShopWindow(QDialog):
             except Exception:
                 articles_json_content = None
 
-        # Lecture du contenu du fichier JSON du plan/quadrillage
         plan_json_content = None
         if plan_json_path:
             try:
@@ -179,20 +185,16 @@ class CreateShopWindow(QDialog):
             except Exception:
                 plan_json_content = None
 
-        # Insertion ou mise à jour des données du magasin
         conn = sqlite3.connect("market_tracer.db")
         c = conn.cursor()
-        # Vérifie si le magasin existe déjà pour cet utilisateur
         c.execute("SELECT id FROM shops WHERE user_id=?", (self.user_id,))
         row = c.fetchone()
         if row:
-            # Mise à jour
             c.execute("""
                 UPDATE shops SET nom=?, auteur=?, date_creation=?, apropos=?, chemin=?, articles_json=?, plan_json=?
                 WHERE user_id=?
             """, (nom, auteur, date, apropos, chemin, articles_json_content, plan_json_content, self.user_id))
         else:
-            # Insertion
             c.execute("""
                 INSERT INTO shops (nom, auteur, date_creation, apropos, chemin, articles_json, plan_json, user_id)
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?)
@@ -202,6 +204,7 @@ class CreateShopWindow(QDialog):
 
         self.close()
 
+    # Fonction pour parcourir et sélectionner une image du plan du magasin
     def browse_file(self):
         dialog = QFileDialog(self)
         dialog.setFileMode(QFileDialog.FileMode.ExistingFile)
@@ -211,6 +214,7 @@ class CreateShopWindow(QDialog):
             if selected:
                 self.chemin_input.setText(selected[0])
 
+    # Fonction pour parcourir et sélectionner un fichier JSON d'articles
     def browse_json(self):
         dialog = QFileDialog(self)
         dialog.setNameFilter("Fichiers JSON (*.json)")
@@ -220,6 +224,7 @@ class CreateShopWindow(QDialog):
             if selected:
                 self.json_input.setText(selected[0])
 
+    # Fonction pour parcourir et sélectionner un fichier JSON de plan (quadrillage)
     def browse_plan_json(self):
         dialog = QFileDialog(self)
         dialog.setNameFilter("Fichiers JSON (*.json)")
@@ -228,9 +233,3 @@ class CreateShopWindow(QDialog):
             selected = dialog.selectedFiles()
             if selected:
                 self.plan_json_input.setText(selected[0])
-
-if __name__ == "__main__":
-    app = QApplication(sys.argv)
-    window = CreateShopWindow(1)
-    window.show()
-    sys.exit(app.exec())

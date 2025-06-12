@@ -43,7 +43,7 @@ class AboutWindow(QWidget):
         version_label = QLabel("Version 1")
         version_label.setFont(QFont("Arial", 12))
         version_label.setStyleSheet("color: #888;")
-        version_label.setAlignment(Qt.AlignmentFlag.AlignCenter)  # centre horizontal et vertical
+        version_label.setAlignment(Qt.AlignmentFlag.AlignCenter) 
         main_layout.addWidget(version_label)
 
         # Description
@@ -56,7 +56,7 @@ class AboutWindow(QWidget):
         )
         desc.setFont(QFont("Arial", 12))
         desc.setWordWrap(True)
-        desc.setAlignment(Qt.AlignmentFlag.AlignCenter)  # centre horizontal et vertical
+        desc.setAlignment(Qt.AlignmentFlag.AlignCenter) 
         main_layout.addWidget(desc)
 
 # ==============================================================

@@ -1,9 +1,18 @@
+# ==============================================================
+#
+# Market Tracer - Boîte de gestion des employés
+# Développé par Lysandre Pace--Boulnois
+# Dernière modification : 12/06/2025
+#
+# ==============================================================
+
 import sqlite3
 from PyQt6.QtWidgets import QDialog, QVBoxLayout, QListWidget, QHBoxLayout, QPushButton, QMessageBox
 from employeeEditDialog import EmployeeEditDialog
 
 class EmployeeManagerDialog(QDialog):
     def __init__(self, shop_id, parent=None):
+        # Constructeur de la boîte de gestion des employés
         super().__init__(parent)
         self.setWindowTitle("Gérer les employés")
         self.setMinimumWidth(400)
@@ -30,6 +39,7 @@ class EmployeeManagerDialog(QDialog):
         self.refresh()
 
     def refresh(self):
+        # Rafraîchit la liste des employés affichés
         self.list.clear()
         conn = sqlite3.connect("market_tracer.db")
         c = conn.cursor()
@@ -39,6 +49,7 @@ class EmployeeManagerDialog(QDialog):
         conn.close()
 
     def add_employee(self):
+        # Ajoute un nouvel employé à la base de données
         dialog = EmployeeEditDialog(parent=self)
         if dialog.exec():
             username, password = dialog.get_data()
@@ -50,6 +61,7 @@ class EmployeeManagerDialog(QDialog):
             self.refresh()
 
     def edit_employee(self):
+        # Modifie les informations d'un employé sélectionné
         item = self.list.currentItem()
         if not item:
             QMessageBox.warning(self, "Sélection", "Sélectionnez un employé à modifier.")
@@ -66,6 +78,7 @@ class EmployeeManagerDialog(QDialog):
             self.refresh()
 
     def delete_employee(self):
+        # Supprime l'employé sélectionné de la base de données
         item = self.list.currentItem()
         if not item:
             QMessageBox.warning(self, "Sélection", "Sélectionnez un employé à supprimer.")
