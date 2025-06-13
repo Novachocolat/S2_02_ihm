@@ -29,7 +29,7 @@
       "row": 12,
       "col": 1,
       "type": "Rayon",
-      "object": "NULL"
+      "object": "Rayon frais"
     },
     {
       "row": 11,
@@ -503,7 +503,7 @@
       "row": 7,
       "col": 11,
       "type": "Rayon",
-      "object": "NULL"
+      "object": "Fruits"
     },
     {
       "row": 6,
@@ -707,7 +707,7 @@
       "row": 8,
       "col": 16,
       "type": "Rayon",
-      "object": "NULL"
+      "object": "Légumes"
     },
     {
       "row": 7,
@@ -1001,7 +1001,7 @@
       "row": 11,
       "col": 23,
       "type": "Rayon",
-      "object": "NULL"
+      "object": "Épicerie sucrée"
     },
     {
       "row": 12,
@@ -1067,7 +1067,7 @@
       "row": 11,
       "col": 24,
       "type": "Rayon",
-      "object": "NULL"
+      "object": "Animaux"
     },
     {
       "row": 10,
@@ -1121,7 +1121,7 @@
       "row": 2,
       "col": 2,
       "type": "Rayon",
-      "object": "NULL"
+      "object": "Poissons"
     },
     {
       "row": 1,
@@ -1205,7 +1205,7 @@
       "row": 1,
       "col": 22,
       "type": "Rayon",
-      "object": "NULL"
+      "object": "Viandes"
     },
     {
       "row": 1,
@@ -1529,7 +1529,7 @@
       "row": 7,
       "col": 42,
       "type": "Rayon",
-      "object": "NULL"
+      "object": "Articles Maison"
     },
     {
       "row": 7,
@@ -2627,7 +2627,7 @@
       "row": 23,
       "col": 19,
       "type": "Rayon",
-      "object": "NULL"
+      "object": "Épicerie"
     },
     {
       "row": 22,
@@ -2843,7 +2843,7 @@
       "row": 19,
       "col": 14,
       "type": "Rayon",
-      "object": "NULL"
+      "object": "Petit déjeuner"
     },
     {
       "row": 23,
@@ -3227,7 +3227,7 @@
       "row": 22,
       "col": 3,
       "type": "Rayon",
-      "object": "NULL"
+      "object": "Conserves"
     },
     {
       "row": 23,
@@ -3359,7 +3359,7 @@
       "row": 22,
       "col": 1,
       "type": "Rayon",
-      "object": "NULL"
+      "object": "Apéritifs"
     },
     {
       "row": 23,
@@ -3443,7 +3443,7 @@
       "row": 34,
       "col": 3,
       "type": "Rayon",
-      "object": "NULL"
+      "object": "Boissons"
     },
     {
       "row": 34,
@@ -3563,7 +3563,7 @@
       "row": 24,
       "col": 48,
       "type": "Rayon",
-      "object": "NULL"
+      "object": "Bureau"
     },
     {
       "row": 26,
@@ -3947,7 +3947,7 @@
       "row": 14,
       "col": 29,
       "type": "Rayon",
-      "object": "NULL"
+      "object": "Hygiène"
     },
     {
       "row": 12,
@@ -4127,113 +4127,13 @@
       "row": 11,
       "col": 33,
       "type": "Rayon",
-      "object": "NULL"
+      "object": "Crèmerie"
     },
     {
       "row": 11,
       "col": 34,
       "type": "Rayon",
       "object": "NULL"
-    },
-    {
-      "row": 33,
-      "col": 11,
-      "type": "Caisse"
-    },
-    {
-      "row": 33,
-      "col": 12,
-      "type": "Caisse"
-    },
-    {
-      "row": 33,
-      "col": 13,
-      "type": "Caisse"
-    },
-    {
-      "row": 33,
-      "col": 14,
-      "type": "Caisse"
-    },
-    {
-      "row": 33,
-      "col": 15,
-      "type": "Caisse"
-    },
-    {
-      "row": 33,
-      "col": 16,
-      "type": "Caisse"
-    },
-    {
-      "row": 33,
-      "col": 17,
-      "type": "Caisse"
-    },
-    {
-      "row": 33,
-      "col": 18,
-      "type": "Caisse"
-    },
-    {
-      "row": 33,
-      "col": 19,
-      "type": "Caisse"
-    },
-    {
-      "row": 33,
-      "col": 22,
-      "type": "Caisse"
-    },
-    {
-      "row": 33,
-      "col": 23,
-      "type": "Caisse"
-    },
-    {
-      "row": 33,
-      "col": 24,
-      "type": "Caisse"
-    },
-    {
-      "row": 33,
-      "col": 25,
-      "type": "Caisse"
-    },
-    {
-      "row": 33,
-      "col": 26,
-      "type": "Caisse"
-    },
-    {
-      "row": 33,
-      "col": 27,
-      "type": "Caisse"
-    },
-    {
-      "row": 33,
-      "col": 28,
-      "type": "Caisse"
-    },
-    {
-      "row": 33,
-      "col": 29,
-      "type": "Caisse"
-    },
-    {
-      "row": 33,
-      "col": 30,
-      "type": "Caisse"
-    },
-    {
-      "row": 33,
-      "col": 31,
-      "type": "Caisse"
-    },
-    {
-      "row": 33,
-      "col": 32,
-      "type": "Caisse"
     },
     {
       "row": 0,
@@ -5105,6 +5005,106 @@
       "row": 34,
       "col": 41,
       "type": "Mur"
+    },
+    {
+      "row": 34,
+      "col": 11,
+      "type": "Caisse"
+    },
+    {
+      "row": 34,
+      "col": 15,
+      "type": "Caisse"
+    },
+    {
+      "row": 34,
+      "col": 17,
+      "type": "Caisse"
+    },
+    {
+      "row": 34,
+      "col": 19,
+      "type": "Caisse"
+    },
+    {
+      "row": 34,
+      "col": 13,
+      "type": "Caisse"
+    },
+    {
+      "row": 34,
+      "col": 22,
+      "type": "Caisse"
+    },
+    {
+      "row": 34,
+      "col": 23,
+      "type": "Caisse"
+    },
+    {
+      "row": 34,
+      "col": 24,
+      "type": "Caisse"
+    },
+    {
+      "row": 34,
+      "col": 25,
+      "type": "Caisse"
+    },
+    {
+      "row": 34,
+      "col": 26,
+      "type": "Caisse"
+    },
+    {
+      "row": 34,
+      "col": 27,
+      "type": "Caisse"
+    },
+    {
+      "row": 34,
+      "col": 28,
+      "type": "Caisse"
+    },
+    {
+      "row": 34,
+      "col": 29,
+      "type": "Caisse"
+    },
+    {
+      "row": 34,
+      "col": 30,
+      "type": "Caisse"
+    },
+    {
+      "row": 34,
+      "col": 31,
+      "type": "Caisse"
+    },
+    {
+      "row": 34,
+      "col": 16,
+      "type": "Caisse"
+    },
+    {
+      "row": 34,
+      "col": 12,
+      "type": "Caisse"
+    },
+    {
+      "row": 34,
+      "col": 14,
+      "type": "Caisse"
+    },
+    {
+      "row": 34,
+      "col": 18,
+      "type": "Caisse"
+    },
+    {
+      "row": 34,
+      "col": 32,
+      "type": "Caisse"
     },
     {
       "row": 2,
