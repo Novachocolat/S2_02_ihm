@@ -123,6 +123,8 @@ class GridOverlay(QGraphicsView):
             cell_rect = QRectF(x, y, self.grid_size, self.grid_size)
             self.scene.addRect(cell_rect, QPen(Qt.PenStyle.NoPen), QBrush(color))
 
+            # Si un objet est présent dans la cellule, on l'affiche
+            # avec l'emoji correspondant à sa catégorie
             if (row, col) in self.objects_in_cells:
                 obj_data = self.objects_in_cells[(row, col)]
                 category = obj_data["category"]
