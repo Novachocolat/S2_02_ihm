@@ -1,28 +1,17 @@
 # ==============================================================
-
-# Market Tracer - À propos
-# Développée par David Melocco et Simon Leclercq-Speter
-# Dernière modification : 11/06/2025
-
+# Fenêtre À propos de l'application Market Tracer
+# Développé par D. MELOCCO, S. LECLERCQ-SPETER
+# Dernière modification : 13/06/2025
 # ==============================================================
 
-# Importations
-import sys
 from PyQt6.QtWidgets import (
-    QApplication, QWidget, QLabel, QVBoxLayout
+    QWidget, QLabel, QVBoxLayout
 )
 from PyQt6.QtGui import QPixmap, QFont, QIcon
 from PyQt6.QtCore import Qt
 
-# ==============================================================
-# Fenêtre À propos de l'application Market Tracer
-# ==============================================================
 class AboutWindow(QWidget):
-    """Fenêtre À propos de l'application Market Tracer.
-
-    Args:
-        QWidget (QWidget): classe de base pour les widgets de l'interface graphique.
-    """
+    """Fenêtre À propos de l'application Market Tracer."""
     def __init__(self):
         """Initialisation de la fenêtre À propos."""
         super().__init__()
@@ -33,7 +22,8 @@ class AboutWindow(QWidget):
 
     def setup_ui(self):
         """Configuration de l'interface utilisateur de la fenêtre À propos."""
-        # Layout principal vertical
+
+        # Layout principal
         main_layout = QVBoxLayout(self)
         main_layout.setContentsMargins(20, 20, 20, 20)
         main_layout.setSpacing(15)
@@ -75,12 +65,3 @@ class AboutWindow(QWidget):
         authors.setAlignment(Qt.AlignmentFlag.AlignLeft)
         authors.setStyleSheet("color: #555;")
         main_layout.addWidget(authors)
-
-# ==============================================================
-# Exécution du programme pour débogage
-# ==============================================================
-# if __name__ == "__main__":
-#     app = QApplication(sys.argv)
-#     win = AboutWindow()
-#     win.show()
-#     sys.exit(app.exec())

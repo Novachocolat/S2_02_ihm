@@ -191,6 +191,13 @@ class GridOverlay(QGraphicsView):
         """
         x, y = scene_pos.x(), scene_pos.y()
 
+        # Empêcher de colorier hors du plan
+        if not self.image_item:
+            return
+        rect = self.image_item.boundingRect()
+        if not (0 <= x < rect.width() and 0 <= y < rect.height()):
+            return  # Ignore si hors de l'image
+
         col, row = int(x // self.grid_size), int(y // self.grid_size)
         cell_key = (row, col)
 
@@ -213,7 +220,6 @@ class GridOverlay(QGraphicsView):
             self.colored_cells[cell_key] = color
 
         self.draw_grid()
-
         self.grid_modified.emit()
 
     def reset_colored_cells(self):

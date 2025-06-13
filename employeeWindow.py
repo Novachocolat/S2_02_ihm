@@ -14,7 +14,7 @@ from PyQt6.QtWidgets import (
 )
 from PyQt6.QtGui import QFont, QIcon, QGuiApplication, QPixmap
 from PyQt6.QtCore import Qt
-from quadrillage import GridOverlay
+from grid import GridOverlay
 import sys
 import json
 import sqlite3
@@ -338,7 +338,7 @@ class EmployeeWindow(QWidget):
 
     # Ouvre la fenêtre "Documentation"
     def open_doc(self):
-        from docWindow import DocWindow
+        from helpWindow import DocWindow
         self.doc_window = DocWindow()
         self.doc_window.show()
 

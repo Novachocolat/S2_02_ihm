@@ -62,7 +62,7 @@ class ShopManagerDialog(QDialog):
 
     # Crée un nouveau magasin
     def create_shop(self):
-        from createShopWindow import CreateShopWindow
+        from configureWindow import CreateShopWindow
         dlg = CreateShopWindow(self.user_id, self)
         dlg.exec()
         self.refresh()
@@ -78,7 +78,7 @@ class ShopManagerDialog(QDialog):
     def edit_shop(self):
         shop_id = self.get_selected_shop_id()
         if shop_id:
-            from createShopWindow import CreateShopWindow
+            from configureWindow import CreateShopWindow
             conn = sqlite3.connect("market_tracer.db")
             c = conn.cursor()
             c.execute("SELECT nom, auteur, date_creation, apropos, chemin, articles_json FROM shops WHERE id=?", (shop_id,))

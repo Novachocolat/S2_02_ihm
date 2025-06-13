@@ -16,7 +16,7 @@ from PyQt6.QtGui import QFont, QIcon, QGuiApplication
 from PyQt6.QtCore import Qt
 import sys
 import json
-from quadrillage import GridOverlay
+from grid import GridOverlay
 from PyQt6.QtGui import QPixmap
 import sqlite3
 
@@ -347,7 +347,7 @@ class CustomerWindow(QWidget):
 
     # Ouvre la fenêtre "Documentation"
     def open_doc(self):
-        from docWindow import DocWindow
+        from helpWindow import DocWindow
         self.doc_window = DocWindow()
         self.doc_window.show()
 

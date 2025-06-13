@@ -17,8 +17,8 @@ import sys, json, sqlite3, platform, os
 from addArticleDialog import AddArticleDialog
 from shopManagerDialog import ShopManagerDialog
 from employeeManagerDialog import EmployeeManagerDialog
-from quadrillage import GridOverlay, DraggableListWidget
-from createShopWindow import CreateShopWindow
+from grid import GridOverlay, DraggableListWidget
+from configureWindow import CreateShopWindow
 from datetime import datetime
 
 def debug(msg):
@@ -544,7 +544,7 @@ class AdminWindow(QWidget):
     def open_doc(self):
         """Ouvre la fenêtre de documentation."""
         debug("Ouverture de la fenêtre de documentation...")
-        from docWindow import DocWindow
+        from helpWindow import DocWindow
         self.doc_window = DocWindow()
         self.doc_window.show()
 
