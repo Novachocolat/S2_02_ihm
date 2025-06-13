@@ -1,6 +1,8 @@
 # ==============================================================
 # Market Tracer - Algorithme A* (Altération de : https://www.datacamp.com/fr/tutorial/a-star-algorithm?dc_referrer=https%3A%2F%2Fwww.google.com%2F)
-# Documentation du code : D. MELOCCO
+# Altération de l'agorithme : David M.
+# Documentation du code : David M.
+# Version : 1.0
 # ==============================================================
 # Importations
 from typing import List, Tuple, Dict # Typage direct

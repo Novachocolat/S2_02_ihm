@@ -1,5 +1,7 @@
 # ==============================================================
-# Market Tracer - Quadrillage avec zoom synchrone
+# Market Tracer - Quadrillage (app n°1)
+# Code : Simon L. et David M.
+# Documentation du code : David M.
 # ==============================================================
 # Importations
 import sys, json
@@ -7,37 +9,42 @@ from PyQt6.QtWidgets import (
     QApplication, QMainWindow, QFileDialog, QGraphicsView,
     QGraphicsScene, QGraphicsPixmapItem, QVBoxLayout,
     QWidget, QSlider, QPushButton, QHBoxLayout, QGroupBox,
-    QMessageBox, QListWidget, QListWidgetItem, QLabel 
+    QMessageBox, QListWidget, QListWidgetItem, QLabel, QToolTip
 )
 from PyQt6.QtGui import QDrag, QPixmap, QFont, QBrush, QPen, QColor
 from PyQt6.QtCore import QMimeData, Qt, QRectF
 
-# Image avec grille et cellules coloriées
+# ==============================================================
+# Quadrillage avec des cellules colorées
+# ==============================================================
 class GridOverlay(QGraphicsView):
+    """Vue graphique avec un quadrillage et des cellules coloriées pour un plan de marché."""
     def __init__(self):
+        """Initialise la vue avec une scène graphique, un quadrillage et des cellules coloriées."""
         super().__init__()
-        self.scene = QGraphicsScene(self)
-        self.setScene(self.scene)
-        self.image_item = None
-        self.grid_size = 50
-        self.entrance_number = 0
+        self.scene = QGraphicsScene(self) # Crée une scène pour la vue
+        self.setScene(self.scene) # Définit la scène pour la vue
+        self.image_item = None # L'élément image du plan
+        self.grid_size = 50 # Taille de la grille en pixels
+        self.entrance_number = 0 # Nombre d'entrées (0 ou 1)
 
-        self.colored_cells = {}
-        self.objects_in_cells = {}
-        self.setMouseTracking(True)
+        self.colored_cells = {} # Dictionnaire pour les cellules coloriées
+        self.objects_in_cells = {} # Dictionnaire pour les objets dans les cellules
+        self.setMouseTracking(True) # Permet le suivi de la souris
 
-        # Zoom plan + grille
+        # Coefficient de zoom
         self.zoom_factor = 1.0
 
         # Couleurs des éléments du plan 
         self.color_types = {
-            'Rayon': QColor(0, 0, 255, 120),
-            'Caisse': QColor(255, 255, 0, 120),
-            'Entrée': QColor(255, 0, 0, 120),
-            'Mur': QColor(128, 128, 128, 120),
+            'Rayon': QColor(0, 0, 255, 120), # Bleu pour les rayons
+            'Caisse': QColor(255, 255, 0, 120), # Jaune pour les caisses
+            'Entrée': QColor(255, 0, 0, 120), # Rouge pour l'entrée
+            'Mur': QColor(128, 128, 128, 120), # Gris pour les murs
+            'Stock': QColor(0, 255, 0, 120), # Vert pour le stock
         }
 
-        # Ajout de tous les rayons principaux du JSON 
+        # Tous les rayons du JSON 
         self.emoji_mapping = {
             "Fruits": "🍎",
             "Légumes": "🥦",
@@ -73,6 +80,11 @@ class GridOverlay(QGraphicsView):
 
     # Charger le plan
     def load_image(self, path):
+        """Charge une image et l'affiche dans la vue avec un quadrillage.
+
+        Args:
+            path (str): chemin d'accès à l'image.
+        """
         pixmap = QPixmap(path)
         if pixmap.isNull():
             print("Erreur de chargement d'image")
@@ -82,6 +94,7 @@ class GridOverlay(QGraphicsView):
         self.colored_cells.clear()
         self.objects_in_cells.clear()
 
+        # Créer l'image
         self.image_item = QGraphicsPixmapItem(pixmap)
         self.scene.addItem(self.image_item)
         self.setSceneRect(QRectF(pixmap.rect()))
@@ -92,6 +105,7 @@ class GridOverlay(QGraphicsView):
 
     # Dessiner les cellules
     def draw_grid(self):
+        """Dessine le quadrillage et les cellules colorées sur l'image chargée."""
         if not self.image_item:
             return
 
@@ -102,6 +116,7 @@ class GridOverlay(QGraphicsView):
 
         rect = self.image_item.boundingRect()
 
+        # Dessine les cellules colorées
         for (row, col), color in self.colored_cells.items():
             x = col * self.grid_size
             y = row * self.grid_size
@@ -109,8 +124,9 @@ class GridOverlay(QGraphicsView):
             self.scene.addRect(cell_rect, QPen(Qt.PenStyle.NoPen), QBrush(color))
 
             if (row, col) in self.objects_in_cells:
-                obj = self.objects_in_cells[(row, col)]
-                emoji = self.emoji_mapping.get(obj, "")
+                obj_data = self.objects_in_cells[(row, col)]
+                category = obj_data["category"]
+                emoji = self.emoji_mapping.get(category, "")
                 text_item = self.scene.addText(emoji)
                 font = QFont()
                 font.setPointSize(int(self.grid_size * 0.6))
@@ -132,23 +148,43 @@ class GridOverlay(QGraphicsView):
 
     # Définit la taille de la grille
     def set_grid_size(self, size):
+        """Définit la taille de la grille et redessine le quadrillage.
+
+        Args:
+            size (int): taille de la grille en pixels.
+        """
         self.grid_size = size
         self.draw_grid()
         
     # Définit le mode de déplacement
     def set_pan_mode(self, enable):
+        """Définit le mode de déplacement (pan) de la vue.
+
+        Args:
+            enable (bool): True pour activer le mode de déplacement, False pour le désactiver.
+        """
         self.is_panning = enable
         if enable:
             self.setCursor(Qt.CursorShape.OpenHandCursor)
         else:
             self.setCursor(Qt.CursorShape.ArrowCursor)
 
-    # Définit la couleur 
+    # Définit la couleur
     def set_current_color(self, color_type):
+        """Définit le type de couleur actuel pour la peinture.
+        
+        Args:
+            color_type (str): type de couleur à utiliser pour la peinture.
+        """
         self.current_color_type = color_type
 
     # Colore une cellule à la position de la souris 
     def color_cell_at_position(self, scene_pos):
+        """Colore une cellule à la position donnée dans la scène.
+
+        Args:
+            scene_pos (dict): position de la souris dans la scène.
+        """
         x = scene_pos.x()
         y = scene_pos.y()
 
@@ -164,6 +200,7 @@ class GridOverlay(QGraphicsView):
                 return
             self.entrance_number = 1
 
+        # Si on est en mode gomme, on supprime la cellule
         if self.current_color_type == 'Gomme':
             if self.colored_cells.get(cell_key) == self.color_types['Entrée']:
                 self.entrance_number = 0
@@ -177,15 +214,22 @@ class GridOverlay(QGraphicsView):
 
     # Réinitialiser le quadrillage
     def reset_colored_cells(self):
+        """Réinitialise le quadrillage en supprimant toutes les cellules coloriées et les objets."""
         self.colored_cells.clear()
         self.objects_in_cells.clear()
         self.draw_grid()
 
     # Drag & Drop
     def mousePressEvent(self, event):
+        """Gère l'appui de la souris pour le déplacement ou la peinture.
+
+        Args:
+            event (func): événement de la souris.
+        """
         if not self.image_item:
             return
 
+        # Mode de déplacement
         if self.is_panning:
             if event.button() == Qt.MouseButton.LeftButton:
                 self.setCursor(Qt.CursorShape.ClosedHandCursor)
@@ -198,17 +242,42 @@ class GridOverlay(QGraphicsView):
 
     # Gère le mouvement de la souris
     def mouseMoveEvent(self, event):
+        """Gère le mouvement de la souris pour afficher des informations sur les cellules ou peindre.
+
+        Args:
+            event (func): événement de la souris.
+        """
+        scene_pos = self.mapToScene(event.pos())
+        col = int(scene_pos.x() // self.grid_size)
+        row = int(scene_pos.y() // self.grid_size)
+        cell_key = (row, col)
+
+        # Affiche l'info pour la case
         if self.is_panning and self.last_pan_point:
             delta = event.pos() - self.last_pan_point
             self.last_pan_point = event.pos()
             self.horizontalScrollBar().setValue(self.horizontalScrollBar().value() - delta.x())
             self.verticalScrollBar().setValue(self.verticalScrollBar().value() - delta.y())
         elif self.is_painting:
-            scene_pos = self.mapToScene(event.pos())
             self.color_cell_at_position(scene_pos)
+        else:
+            if self.colored_cells.get(cell_key) in [self.color_types['Rayon'], self.color_types['Stock']]:
+                obj_data = self.objects_in_cells.get(cell_key)
+                if obj_data:
+                    product_name = obj_data["product"]
+                    QToolTip.showText(event.globalPosition().toPoint(), f"Produit : {product_name}", self)
+                else:
+                    QToolTip.hideText()
+            else:
+                QToolTip.hideText()
 
     # Gère le relâchement de la souris
     def mouseReleaseEvent(self, event):
+        """Gère le relâchement de la souris pour arrêter le déplacement ou la peinture.
+
+        Args:
+            event (func): événement de la souris.
+        """
         if self.is_panning:
             self.setCursor(Qt.CursorShape.OpenHandCursor)
             self.last_pan_point = None
@@ -217,57 +286,75 @@ class GridOverlay(QGraphicsView):
 
     # Gère le drag 
     def dragEnterEvent(self, event):
+        """Gère l'entrée d'un objet dans la vue pour le drag & drop.
+
+        Args:
+            event (func): événement de drag.
+        """
         event.accept()
 
     # Gère le mouvement du drag
     def dragMoveEvent(self, event):
+        """Gère le mouvement d'un objet pendant le drag & drop.
+
+        Args:
+            event (func): événement de drag.
+        """
         event.accept()
 
     # Gère le drop d'un objet
     def dropEvent(self, event):
+        """Gère le dépôt d'un objet dans la vue pour le drag & drop.
+
+        Args:
+            event (func): événement de drag.
+        """
         if not self.image_item:
             return
 
         data = event.mimeData().text()
-        try:
-            obj = json.loads(data)
-            if isinstance(obj, dict) and "name" in obj:
-                obj_name = obj["name"]
-            elif isinstance(obj, str):
-                obj_name = obj
-            else:
-                obj_name = str(obj)
-        except Exception:
+
+        # On récupère la catégorie et le produit depuis le texte drag & drop
+        if "::" in data:
+            category, product = data.split("::", 1)
+            obj_name = product.strip()  
+        else:
             obj_name = data.strip().replace('"', '').replace("'", "").strip()
 
-        if obj_name not in self.emoji_mapping:
-            for rayon in self.emoji_mapping:
-                if rayon in obj_name:
-                    obj_name = rayon
-                    break
-            else:
-                obj_name = "Autre"
+        # On garde l'emoji sur la catégorie pour l'afficher dans le graphique
+        category_name = category.strip() if "::" in data else "Autre"
 
-        # Calculer la position de la case
+        if category_name not in self.emoji_mapping:
+            category_name = "Autre"
+
         scene_pos = self.mapToScene(event.position().toPoint())
         col = int(scene_pos.x() // self.grid_size)
         row = int(scene_pos.y() // self.grid_size)
         cell_key = (row, col)
 
-        # Vérifier si la case est un rayon
-        if self.colored_cells.get(cell_key) == self.color_types["Rayon"]:
-            self.objects_in_cells[cell_key] = obj_name
+        # On autorise les dépôts sur Rayon ET Stock
+        allowed_types = ["Rayon", "Stock"]  
+        cell_color = self.colored_cells.get(cell_key)
+
+        if any(cell_color == self.color_types[cell_type] for cell_type in allowed_types):
+            self.objects_in_cells[cell_key] = {"category": category_name, "product": obj_name}
             self.draw_grid()
         else:
-            QMessageBox.warning(self, "Attention", "Vous ne pouvez déposer que sur des Rayons (bleus).")
+            QMessageBox.warning(self, "Attention", "Vous ne pouvez déposer que sur des Rayons ou Stocks.")
 
     # Exporte vers un fichier JSON
     def export_cells_to_json(self, path):
+        """Exporte les cellules coloriées et leurs objets dans un fichier JSON.
+
+        Args:
+            path (str): chemin du fichier JSON à créer.
+        """
         data = {
             "grid_size": self.grid_size,
             "cells": []
         }
         
+        # Ajoute les cellules coloriées et leurs objets
         for (row, col), color in self.colored_cells.items():
             for type_str, type_color in self.color_types.items():
                 if color == type_color:
@@ -276,9 +363,15 @@ class GridOverlay(QGraphicsView):
                         "col": col,
                         "type": type_str
                     }
-                    if type_str == "Rayon":
-                        obj = self.objects_in_cells.get((row, col), None)
-                        cell_data["object"] = obj if obj is not None else "NULL"
+                    if type_str in ["Rayon", "Stock"]:
+                        obj_data = self.objects_in_cells.get((row, col), None)
+                        if obj_data:
+                            cell_data["object"] = {
+                                "category": obj_data["category"],
+                                "product": obj_data["product"]
+                            }
+                        else:
+                            cell_data["object"] = None
                     data["cells"].append(cell_data)
                     break
 
@@ -287,6 +380,11 @@ class GridOverlay(QGraphicsView):
 
     # Importer les cases depuis un fichier JSON
     def import_cells_from_json(self, path):
+        """Importe les cellules coloriées et leurs objets depuis un fichier JSON.
+
+        Args:
+            path (str): chemin du fichier JSON à lire.
+        """
         try:
             with open(path, "r", encoding="utf-8") as f:
                 data = json.load(f)
@@ -299,7 +397,7 @@ class GridOverlay(QGraphicsView):
                 self.grid_size = data["grid_size"]
                 self.slider.setValue(self.grid_size)
 
-            cells = data["cells"] if isinstance(data, dict) and "cells" in data else data
+            cells = data["cells"]
 
             for cell in cells:
                 row = cell.get("row")
@@ -309,7 +407,16 @@ class GridOverlay(QGraphicsView):
                 if type_str in self.color_types:
                     self.colored_cells[(row, col)] = self.color_types[type_str]
                     if obj:
-                        self.objects_in_cells[(row, col)] = obj
+                        if isinstance(obj, dict):
+                            self.objects_in_cells[(row, col)] = {
+                                "category": obj.get("category", "Autre"),
+                                "product": obj.get("product", "")
+                            }
+                        else:
+                            self.objects_in_cells[(row, col)] = {
+                                "category": "Autre",
+                                "product": obj
+                            }
                     if type_str == "Entrée":
                         self.entrance_number = 1
             self.draw_grid()
@@ -318,13 +425,26 @@ class GridOverlay(QGraphicsView):
 
     # Nouvelle méthode pour appliquer le zoom
     def set_zoom(self, factor):
+        """Applique un zoom à la vue en fonction du facteur donné.
+
+        Args:
+            factor (float): facteur de zoom (1.0 pour 100%, 0.5 pour 50%, etc.).
+        """
         self.zoom_factor = factor
         self.resetTransform()
         self.scale(factor, factor)
 
-# Récupérer le texte brut
+# ==============================================================
+# Liste déroulante avec drag & drop
+# ==============================================================
 class DraggableListWidget(QListWidget):
+    """Liste déroulante avec des éléments pouvant être glissés et déposés.
+
+    Args:
+        QListWidget (QListWidget): classe PyQt6 pour la liste déroulante.
+    """
     def startDrag(self, supportedActions):
+        """Règle le format de texte pour le drag & drop."""
         item = self.currentItem()
         if not item:
             return
@@ -334,11 +454,13 @@ class DraggableListWidget(QListWidget):
         drag.setMimeData(mime)
         drag.exec(supportedActions)
 
-# Vue principale 
+# ==============================================================
+# Programme principal
+# ==============================================================
 class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
-        self.setWindowTitle("Quadrillage")
+        self.setWindowTitle("Quadrillage (app n°1)")
 
         self.grid_view = GridOverlay()
 
@@ -386,7 +508,7 @@ class MainWindow(QMainWindow):
         # Boutons pour les couleurs
         for label, color in [
             ("Rayon", 'Rayon'), ("Caisse", 'Caisse'),
-            ("Entrée", 'Entrée'), ("Mur", 'Mur'), ("Gomme", 'Gomme')]:
+            ("Entrée", 'Entrée'), ("Mur", 'Mur'), ("Stock", 'Stock'), ("Gomme", 'Gomme')]:
 
             btn = QPushButton(label)
             btn.clicked.connect(lambda checked, c=color: self.set_paint_mode(c))
@@ -405,7 +527,7 @@ class MainWindow(QMainWindow):
         main_layout.addWidget(buttons_group)
         main_layout.addWidget(self.grid_view)
 
-        # Slider taille de la grille
+        # Slider pour la taille de la grille
         grid_layout = QVBoxLayout()
 
         self.slider = QSlider(Qt.Orientation.Vertical)
@@ -424,7 +546,6 @@ class MainWindow(QMainWindow):
         grid_group = QWidget()
         grid_group.setLayout(grid_layout)
         main_layout.addWidget(grid_group)
-
 
         # Slider pour le zoom global
         zoom_layout = QVBoxLayout()
@@ -451,25 +572,43 @@ class MainWindow(QMainWindow):
         
     # Modes de la grille 
     def set_main_mode(self):
+        """Définit le mode pour déplacer la vue sans peindre."""
         self.grid_view.set_pan_mode(True)
 
     # Modes de peinture
     def set_paint_mode(self, color_type):
+        """Définit le mode de peinture pour la grille.
+
+        Args:
+            color_type (QColor): type de couleur à utiliser pour la peinture.
+        """
         self.grid_view.set_pan_mode(False)
         self.grid_view.set_current_color(color_type)
         
     # Gère le changement de taille de la grille
     def on_grid_size_changed(self, value):
+        """Définit la taille de la grille et met à jour l'affichage.
+
+        Args:
+            value (int): nouvelle taille de la grille en pixels.
+        """
         self.grid_view.set_grid_size(value)
         self.grid_label.setText(f"Grille: {value} px")
 
     # Gère le zoom
     def on_zoom_changed(self, value):
+        """Définit le zoom de la vue en fonction de la valeur du slider.
+
+        Args:
+            value (int): valeur du slider de zoom (10-300).
+        """
         factor = value / 100.0
         self.grid_view.set_zoom(factor)
         self.zoom_label.setText(f"{value}%")
+
     # Ouvrir une image
     def open_image(self):
+        """Ouvre un dialogue pour choisir une image et la charge dans la vue."""
         file_name, _ = QFileDialog.getOpenFileName(self, "Choisir une image", "", "Images (*.png *.jpg *.bmp *.jpeg)")
         if file_name:
             self.grid_view.load_image(file_name)
@@ -477,6 +616,7 @@ class MainWindow(QMainWindow):
 
     #Confirme la réinitialisation
     def confirm_reset(self):
+        """Affiche une boîte de dialogue de confirmation pour réinitialiser le quadrillage."""
         reply = QMessageBox.question(self, "Confirmation",
             "Êtes-vous sûr de vouloir tout réinitialiser ?", QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No)
         if reply == QMessageBox.StandardButton.Yes:
@@ -484,6 +624,7 @@ class MainWindow(QMainWindow):
 
     # Exporter et importer les cases
     def export_cells(self):
+        """Exporte les cellules coloriées et leurs objets dans un fichier JSON."""
         # Vérifie qu'une image de plan est chargée
         if self.grid_view.image_item is None:
             QMessageBox.warning(self, "Erreur", "Veuillez d'abord charger une image de plan avant d'exporter un JSON.")
@@ -496,6 +637,7 @@ class MainWindow(QMainWindow):
 
     # Importe les cases du JSON
     def import_cells(self):
+        """Importe les cellules coloriées et leurs objets depuis un fichier JSON."""
         # Vérifie qu'une image de plan est chargée
         if self.grid_view.image_item is None:
             QMessageBox.warning(self, "Erreur", "Veuillez d'abord charger une image de plan avant d'importer un JSON.")
@@ -508,6 +650,7 @@ class MainWindow(QMainWindow):
 
     # Charge une liste JSON d'objets
     def load_json_list(self):
+        """Charge une liste d'objets depuis un fichier JSON et l'affiche dans la liste déroulante."""
         file_name, _ = QFileDialog.getOpenFileName(self, "Charger un JSON d'objets", "", "JSON (*.json)")
         if not file_name:
             return
@@ -515,13 +658,14 @@ class MainWindow(QMainWindow):
             with open(file_name, "r", encoding="utf-8") as f:
                 data = json.load(f)
             self.json_list.clear()
-            if isinstance(data, list):
+            if isinstance(data, dict):
+                for category, items in data.items():
+                    for item in items:
+                        text = f"{category}{item}"
+                        self.json_list.addItem(QListWidgetItem(text))
+            elif isinstance(data, list):
                 for item in data:
-                    text = item if isinstance(item, str) else json.dumps(item)
-                    self.json_list.addItem(QListWidgetItem(text))
-            elif isinstance(data, dict):
-                for key in data:
-                    self.json_list.addItem(QListWidgetItem(str(key)))
+                    self.json_list.addItem(QListWidgetItem(str(item)))
             else:
                 self.json_list.addItem(QListWidgetItem(str(data)))
         except Exception as e:
