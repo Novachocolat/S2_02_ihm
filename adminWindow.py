@@ -1,6 +1,6 @@
 # ==============================================================
 
-# Market Tracer - Page gérant
+# Market Tracer - Page Gérant
 # Développé par Lysandre Pace--Boulnois
 # Dernière modification : 12/06/2025
 
@@ -8,38 +8,40 @@
 
 # Importations
 from PyQt6.QtWidgets import (
-    QApplication, QWidget, QLabel, QVBoxLayout, QHBoxLayout, QFrame, QPushButton, QListWidget,
+    QApplication, QWidget, QLabel, QVBoxLayout, QHBoxLayout, QFrame, QPushButton,
     QLineEdit, QGroupBox, QMenuBar, QComboBox, QMessageBox, QFileDialog, QSlider
 )
-from PyQt6.QtGui import QFont, QIcon, QPixmap
+from PyQt6.QtGui import QFont, QIcon
 from PyQt6.QtCore import Qt
-import sys
-import json
-import sqlite3
-import platform
+import sys, json, sqlite3, platform, os
 from addArticleDialog import AddArticleDialog
 from shopManagerDialog import ShopManagerDialog
 from employeeManagerDialog import EmployeeManagerDialog
 from quadrillage import GridOverlay, DraggableListWidget
+from createShopWindow import CreateShopWindow
 
 # ==============================================================
 # Fenêtre principale du gérant
 # ==============================================================
-
 class AdminWindow(QWidget):
+    """Fenêtre principale pour le gérant du magasin."""
     def __init__(self, user_id):
+        """Initialise la fenêtre principale du gérant.
+
+        Args:
+            user_id (int): ID de l'utilisateur connecté.
+        """
         super().__init__()
         self.user_id = user_id
-        self.setWindowTitle("Market Tracer - Admin")
-        self.setWindowIcon(QIcon("img/chariot.png"))
-        self.resize(1400, 900)
-        self.setMinimumSize(1000, 700)
+        self.setWindowTitle("Market Tracer - Gérant")
+        self.setWindowIcon(QIcon("img/logo_v1.png"))
+        self.setMinimumSize(1280, 768)
         self.categories = set()
         self.produit_categorie_map = {}
         self.setup_ui()
 
-    # Initialise l'interface principale
     def setup_ui(self):
+        """Configure l'interface utilisateur de la fenêtre principale."""
         print("[AdminWindow] Construction de l'UI")
         main_layout = QVBoxLayout(self)
         main_layout.setContentsMargins(5, 5, 5, 5)
@@ -48,23 +50,19 @@ class AdminWindow(QWidget):
         # Menu déroulant
         menubar = QMenuBar()
         fichier_menu = menubar.addMenu("Fichier")
-        fichier_menu.addAction("Sauvegarder")
         action_charger = fichier_menu.addAction("Charger")
         action_charger.triggered.connect(self.ouvrir_gestion_magasins)
         fichier_menu.addAction("Sauvegarder")
-        fichier_menu.addAction("Fermer")
-        
 
         gestion_menu = menubar.addMenu("Gestion")
-        action_modifier_magasin = gestion_menu.addAction("Modifier mon magasin")
-        action_modifier_magasin.triggered.connect(self.ouvrir_modifier_magasin)
+        action_configurer = gestion_menu.addAction("Configurer mon magasin")
+        action_configurer.triggered.connect(self.ouvrir_configurer_magasin)
         action_gestion_employes = gestion_menu.addAction("Gérer les employés")
         action_gestion_employes.triggered.connect(self.ouvrir_gestion_employes)
 
         plan_menu = menubar.addMenu("Plan")
         plan_menu.addAction("Ouvrir")
         plan_menu.addAction("Afficher")
-        plan_menu.addAction("Paramétrer")
 
         aide_menu = menubar.addMenu("Aide")
         action_about = aide_menu.addAction("À propos")
@@ -112,7 +110,7 @@ class AdminWindow(QWidget):
         btn_retirer = QPushButton("Retirer de mon stock")
         btn_retirer.setFixedHeight(28)
         btn_retirer.setStyleSheet("background: #FF6B3D; ")
-        btn_retirer.clicked.connect(self.retirer_article_selectionne)
+        btn_retirer.clicked.connect(self.confirm_remove)
         gestion_layout.addWidget(btn_retirer)
         left_col.addWidget(gestion_frame)
 
@@ -138,7 +136,6 @@ class AdminWindow(QWidget):
         self.stocks_list = DraggableListWidget()
         self.stocks_list.setDragEnabled(True)
         left_col.addWidget(self.stocks_list, stretch=1)
-        self.stocks_list.itemClicked.connect(self.afficher_details_produit)
 
         left_col.addStretch()
         left_frame = QFrame()
@@ -155,7 +152,7 @@ class AdminWindow(QWidget):
         vline1.setMidLineWidth(0)
         center_layout.addWidget(vline1)
 
-        # Colonne centrale (Plan)
+        # Colonne centrale
         plan_col = QVBoxLayout()
         plan_label = QLabel("Plan du magasin")
         plan_label.setFont(QFont("Arial", 12, QFont.Weight.Bold))
@@ -175,7 +172,7 @@ class AdminWindow(QWidget):
         vline2.setMidLineWidth(0)
         center_layout.addWidget(vline2)
 
-        # Colonne droite (Commandes, Outils, Zoom, Détail)
+        # Colonne droite
         right_col = QVBoxLayout()
         right_col.setSpacing(18)
 
@@ -183,13 +180,13 @@ class AdminWindow(QWidget):
         comm_box.setMinimumWidth(220)
         comm_layout = QVBoxLayout()
         comm_layout.setContentsMargins(10, 10, 10, 10)
-        btn_ouvrir_image = QPushButton("Ouvrir une image")
+        btn_ouvrir_image = QPushButton("Ouvrir un plan")
         btn_ouvrir_image.setMinimumHeight(25)
         btn_ouvrir_image.clicked.connect(self.ouvrir_image_plan)
         comm_layout.addWidget(btn_ouvrir_image)
         btn_reinitialiser = QPushButton("Réinitialiser")
         btn_reinitialiser.setMinimumHeight(25)
-        btn_reinitialiser.clicked.connect(self.grid_overlay.reset_colored_cells)
+        btn_reinitialiser.clicked.connect(self.confirm_reset)
         comm_layout.addWidget(btn_reinitialiser)
         btn_exporter = QPushButton("Exporter en JSON")
         btn_exporter.setMinimumHeight(25)
@@ -199,10 +196,6 @@ class AdminWindow(QWidget):
         btn_importer.setMinimumHeight(25)
         btn_importer.clicked.connect(self.importer_quadrillage_json)
         comm_layout.addWidget(btn_importer)
-        btn_charger = QPushButton("Charger JSON Objets")
-        btn_charger.setMinimumHeight(25)
-        btn_charger.clicked.connect(self.charger_objets_json)
-        comm_layout.addWidget(btn_charger)
         comm_box.setLayout(comm_layout)
         right_col.addWidget(comm_box)
 
@@ -210,19 +203,23 @@ class AdminWindow(QWidget):
         outils_box.setMinimumWidth(220)
         outils_layout = QVBoxLayout()
         outils_layout.setContentsMargins(10, 10, 10, 10)
-        btn_rayon = QPushButton("Rayon (bleu)")
+        btn_deplacer = QPushButton("Se déplacer")
+        btn_deplacer.setMinimumHeight(25)
+        btn_deplacer.clicked.connect(lambda: self.grid_overlay.set_pan_mode(True))
+        outils_layout.addWidget(btn_deplacer)
+        btn_rayon = QPushButton("Rayon")
         btn_rayon.setMinimumHeight(25)
         btn_rayon.clicked.connect(lambda: self.grid_overlay.set_current_color('Rayon'))
         outils_layout.addWidget(btn_rayon)
-        btn_caisse = QPushButton("Caisse (jaune)")
+        btn_caisse = QPushButton("Caisse")
         btn_caisse.setMinimumHeight(25)
         btn_caisse.clicked.connect(lambda: self.grid_overlay.set_current_color('Caisse'))
         outils_layout.addWidget(btn_caisse)
-        btn_entree = QPushButton("Entrée (Rouge)")
+        btn_entree = QPushButton("Entrée")
         btn_entree.setMinimumHeight(25)
         btn_entree.clicked.connect(lambda: self.grid_overlay.set_current_color('Entrée'))
         outils_layout.addWidget(btn_entree)
-        btn_mur = QPushButton("Mur (Gris)")
+        btn_mur = QPushButton("Mur")
         btn_mur.setMinimumHeight(25)
         btn_mur.clicked.connect(lambda: self.grid_overlay.set_current_color('Mur'))
         outils_layout.addWidget(btn_mur)
@@ -230,10 +227,7 @@ class AdminWindow(QWidget):
         btn_gomme.setMinimumHeight(25)
         btn_gomme.clicked.connect(lambda: self.grid_overlay.set_current_color('Gomme'))
         outils_layout.addWidget(btn_gomme)
-        btn_deplacer = QPushButton("Se déplacer")
-        btn_deplacer.setMinimumHeight(25)
-        btn_deplacer.clicked.connect(lambda: self.grid_overlay.set_pan_mode(True))
-        outils_layout.addWidget(btn_deplacer)
+
         # Désactive le mode déplacement pour les autres boutons
         for b in [btn_rayon, btn_caisse, btn_entree, btn_mur, btn_gomme]:
             b.clicked.connect(lambda: self.grid_overlay.set_pan_mode(False))
@@ -244,37 +238,27 @@ class AdminWindow(QWidget):
         zoom_box.setMinimumWidth(220)
         zoom_layout = QVBoxLayout()
         zoom_layout.setContentsMargins(10, 10, 10, 10)
-        label_zoom_grid = QLabel("Zoom grille :\nAjuste la taille des cases de la grille")
-        label_zoom_grid.setWordWrap(True)
-        zoom_layout.addWidget(label_zoom_grid)
+        label_grid_size = QLabel("Grille :\nAjuste la taille des cases de la grille")
+        label_grid_size.setWordWrap(True)
+        zoom_layout.addWidget(label_grid_size)
         self.slider_grid = QSlider(Qt.Orientation.Horizontal)
         self.slider_grid.setMinimum(25)
         self.slider_grid.setMaximum(100)
         self.slider_grid.setValue(self.grid_overlay.grid_size)
         self.slider_grid.valueChanged.connect(lambda v: self.grid_overlay.set_grid_size(v))
         zoom_layout.addWidget(self.slider_grid)
-        label_zoom_global = QLabel("Zoom global :\nAgrandit ou réduit tout le plan")
-        label_zoom_global.setWordWrap(True)
-        zoom_layout.addWidget(label_zoom_global)
+        label_zoom = QLabel("Zoom :\nAgrandit ou réduit le plan")
+        label_zoom.setWordWrap(True)
+        zoom_layout.addWidget(label_zoom)
         self.slider_zoom = QSlider(Qt.Orientation.Horizontal)
         self.slider_zoom.setMinimum(10)
         self.slider_zoom.setMaximum(300)
-        self.slider_zoom.setValue(100)
+        self.slider_zoom.setValue(50)
         self.slider_zoom.valueChanged.connect(lambda v: self.grid_overlay.set_zoom(v / 100.0))
+        self.grid_overlay.set_zoom(0.5)
         zoom_layout.addWidget(self.slider_zoom)
         zoom_box.setLayout(zoom_layout)
         right_col.addWidget(zoom_box)
-
-        details_box = QGroupBox("Détail")
-        details_box.setMinimumWidth(220)
-        details_layout = QVBoxLayout()
-        details_layout.setContentsMargins(10, 10, 10, 10)
-        self.produit_label = QLabel("Produit : ...")
-        details_layout.addWidget(self.produit_label)
-        self.categorie_label = QLabel("Catégorie : ...")
-        details_layout.addWidget(self.categorie_label)
-        details_box.setLayout(details_layout)
-        right_col.addWidget(details_box)
 
         right_col.addStretch()
         right_frame = QFrame()
@@ -302,68 +286,105 @@ class AdminWindow(QWidget):
         if result:
             articles_json, plan_json, plan_image_path = result
             if articles_json:
-                self.afficher_stocks_depuis_json(articles_json)
+                # Si c'est un chemin de fichier JSON, on lit le contenu
+                if isinstance(articles_json, str) and articles_json.endswith('.json') and os.path.isfile(articles_json):
+                    with open(articles_json, "r", encoding="utf-8") as f:
+                        articles_json_content = f.read()
+                else:
+                    articles_json_content = articles_json
+                self.afficher_stocks_depuis_json(articles_json_content)
             else:
                 self.status_bar.setText("Aucun article associé à ce magasin.")
             if plan_image_path:
                 self.grid_overlay.load_image(plan_image_path)
+            else:
+                self.status_bar.setText("Aucun plan associé à ce magasin.")
             if plan_json:
                 self.grid_overlay.import_cells_from_json_content(plan_json)
+                self.slider_grid.setValue(self.grid_overlay.grid_size)
+            else:
+                self.status_bar.setText("Aucun quadrillage associé à ce magasin.")
         else:
             self.status_bar.setText("Aucun magasin associé à ce compte.")
 
-    def ouvrir_fichier_json(self):
-        file_dialog = QFileDialog(self)
-        file_dialog.setNameFilter("Fichiers JSON (*.json)")
-        if file_dialog.exec():
-            filenames = file_dialog.selectedFiles()
-            if filenames:
-                with open(filenames[0], "r", encoding="utf-8") as f:
-                    content = f.read()
-                self.afficher_stocks_depuis_json(content)
-                self.status_bar.setText(f"Fichier chargé : {filenames[0]}")
+    def ouvrir_gestion_magasins(self):
+        dlg = ShopManagerDialog(self.user_id, self)
+        if dlg.exec():
+            if hasattr(dlg, "creation_demande") and dlg.creation_demande:
+                self.creer_nouveau_magasin()
+            elif hasattr(dlg, "selected_shop_id"):
+                self.charger_magasin_existant(dlg.selected_shop_id)
+                
+    def creer_nouveau_magasin(self):
+        dialog = CreateShopWindow(self.user_id, self, None)
+        if dialog.exec():
+            # Après la création, récupérons l'ID du nouveau shop
+            conn = sqlite3.connect("market_tracer.db")
+            c = conn.cursor()
+            c.execute("SELECT id, articles_json, plan_json, chemin FROM shops WHERE user_id=? ORDER BY id DESC LIMIT 1", (self.user_id,))
+            result = c.fetchone()
+            conn.close()
+            if result:
+                shop_id, articles_json, plan_json, plan_image_path = result
+                self.charger_magasin_existant(shop_id)
+                
+    def charger_magasin_existant(self, shop_id):
+        conn = sqlite3.connect("market_tracer.db")
+        c = conn.cursor()
+        c.execute("SELECT articles_json, plan_json, chemin FROM shops WHERE id=?", (shop_id,))
+        result = c.fetchone()
+        conn.close()
+        if result:
+            articles_json, plan_json, plan_image_path = result
+            if articles_json:
+                if isinstance(articles_json, str) and articles_json.endswith('.json') and os.path.isfile(articles_json):
+                    with open(articles_json, "r", encoding="utf-8") as f:
+                        articles_json_content = f.read()
+                else:
+                    articles_json_content = articles_json
+                self.afficher_stocks_depuis_json(articles_json_content)
+            else:
+                self.status_bar.setText("Aucun article associé à ce magasin.")
+            if plan_image_path:
+                self.grid_overlay.load_image(plan_image_path)
+            else:
+                self.status_bar.setText("Aucun plan associé à ce magasin.")
+            if plan_json:
+                self.grid_overlay.import_cells_from_json_content(plan_json)
+                self.slider_grid.setValue(self.grid_overlay.grid_size)
+            else:
+                self.status_bar.setText("Aucun quadrillage associé à ce magasin.")
+        else:
+            QMessageBox.warning(self, "Erreur", "Magasin introuvable.")
+
+
+
 
     def afficher_stocks_depuis_json(self, articles_json_content):
         self.stocks_list.clear()
         self.produit_categorie_map = {}
         self.categories = set()
         try:
-            if isinstance(articles_json_content, str) and articles_json_content.endswith(".json"):
-                with open(articles_json_content, "r", encoding="utf-8") as f:
-                    data = json.load(f)
-            else:
-                data = json.loads(articles_json_content)
+            data = json.loads(articles_json_content)
             for categorie, produits in data.items():
                 self.categories.add(categorie)
                 for produit in produits:
-                    text = f"{categorie}::{produit}"
-                    self.stocks_list.addItem(text)
-                    self.produit_categorie_map[text] = categorie
-            self.filtre_combo.blockSignals(True)
-            self.filtre_combo.clear()
-            self.filtre_combo.addItem("Toutes les catégories")
-            for cat in sorted(self.categories):
-                self.filtre_combo.addItem(cat)
-            self.filtre_combo.blockSignals(False)
+                    key = f"{categorie.lower()}::{produit.lower()}"
+                    self.stocks_list.addItem(f"{produit}")
+                    self.produit_categorie_map[key] = (categorie, produit)
+            self._maj_filtre_categories()
             self.status_bar.setText(f"{self.stocks_list.count()} produits chargés depuis la base de données.")
         except Exception as e:
             self.stocks_list.addItem("Erreur de lecture du JSON")
             self.status_bar.setText("Erreur lors du chargement des articles.")
 
-    # Affiche les détails du produit sélectionné
-    def afficher_details_produit(self, item):
-        produit = item.text()
-        categorie = self.produit_categorie_map.get(produit, "Inconnu")
-        self.produit_label.setText(f"Produit : {produit}")
-        self.categorie_label.setText(f"Catégorie : {categorie}")
-
     # Filtre la liste des articles selon la catégorie
     def filtrer_stocks(self, categorie):
         self.stocks_list.clear()
         texte = self.search_input.text().lower() if hasattr(self, "search_input") else ""
-        for produit, cat in self.produit_categorie_map.items():
-            if (categorie == "Toutes les catégories" or cat == categorie) and texte in produit.lower():
-                self.stocks_list.addItem(produit)
+        for key, (cat, nom) in self.produit_categorie_map.items():
+            if (categorie == "Toutes les catégories" or cat.lower() == categorie.lower()) and texte in nom.lower():
+                self.stocks_list.addItem(f"{cat}::{nom}")
 
     # Déconnecte l'utilisateur
     def deconnexion(self):
@@ -377,18 +398,13 @@ class AdminWindow(QWidget):
         if dialog.exec():
             nom, categorie = dialog.get_data()
             if nom and categorie:
-                text = f"{categorie}::{nom}"
+                key = f"{categorie.lower()}::{nom.lower()}"  # clé insensible à la casse
+                text = f"{categorie}::{nom}"  # affichage d'origine
                 self.stocks_list.addItem(text)
-                self.produit_categorie_map[text] = categorie
+                self.produit_categorie_map[key] = (categorie, nom)  # stocke l'affichage d'origine
                 self.categories.add(categorie)
                 self.status_bar.setText(f"Article '{nom}' ajouté à la catégorie '{categorie}'.")
-                self.filtre_combo.blockSignals(True)
-                self.filtre_combo.clear()
-                self.filtre_combo.addItem("Toutes les catégories")
-                for cat in sorted(self.categories):
-                    self.filtre_combo.addItem(cat)
-                self.filtre_combo.blockSignals(False)
-                # Mise à jour du JSON en BDD
+                self._maj_filtre_categories()
                 self.sauvegarder_articles_json()
             else:
                 QMessageBox.warning(self, "Erreur", "Veuillez remplir tous les champs.")
@@ -398,21 +414,20 @@ class AdminWindow(QWidget):
         if not item:
             QMessageBox.warning(self, "Aucun article sélectionné", "Veuillez sélectionner un article à retirer.")
             return
-        nom = item.text()
-        categorie = self.produit_categorie_map.get(nom)
-        if categorie and nom in self.produit_categorie_map:
-            del self.produit_categorie_map[nom]
+        text = item.text()
+        cat, nom = text.split("::", 1)
+        key = f"{cat.lower()}::{nom.lower()}"
+        if key in self.produit_categorie_map:
+            
+            del self.produit_categorie_map[key]
         self.stocks_list.takeItem(self.stocks_list.row(item))
-        # Mise à jour du JSON en BDD
         self.sauvegarder_articles_json()
         self.status_bar.setText(f"Article '{nom}' retiré du stock.")
 
     def sauvegarder_articles_json(self):
-        # Reconstruit le JSON à partir de la map
         data = {}
-        for produit, categorie in self.produit_categorie_map.items():
-            cat, prod = produit.split("::", 1)
-            data.setdefault(cat, []).append(prod)
+        for key, (cat, nom) in self.produit_categorie_map.items():
+            data.setdefault(cat, []).append(nom)
         articles_json_content = json.dumps(data, ensure_ascii=False, indent=2)
         conn = sqlite3.connect("market_tracer.db")
         c = conn.cursor()
@@ -420,8 +435,7 @@ class AdminWindow(QWidget):
         conn.commit()
         conn.close()
 
-    def ouvrir_modifier_magasin(self):
-        from createShopWindow import CreateShopWindow
+    def ouvrir_configurer_magasin(self):
         conn = sqlite3.connect("market_tracer.db")
         c = conn.cursor()
         c.execute("SELECT nom, auteur, date_creation, apropos, chemin, articles_json FROM shops WHERE user_id=?", (self.user_id,))
@@ -439,8 +453,21 @@ class AdminWindow(QWidget):
             }
         dialog = CreateShopWindow(self.user_id, self, shop_data)
         if dialog.exec():
+            conn = sqlite3.connect("market_tracer.db")
+            c = conn.cursor()
+            c.execute("SELECT chemin FROM shops WHERE user_id=?", (self.user_id,))
+            row = c.fetchone()
+            path = row[0] if row else None
+
+            self.grid_overlay.load_image(path)
+            json_path = dialog.json_input.text()
+            if json_path and json_path.endswith('.json') and os.path.isfile(json_path):
+                with open(json_path, "r", encoding="utf-8") as f:
+                    articles_json_content = f.read()
+            else:
+                articles_json_content = json_path
+            self.afficher_stocks_depuis_json(articles_json_content)
             self.status_bar.setText("Magasin modifié avec succès.")
-            self.afficher_stocks_depuis_json(dialog.json_input.text())
 
     def rechercher_stocks(self, texte):
         texte = texte.lower()
@@ -496,7 +523,7 @@ class AdminWindow(QWidget):
         self.licence_window.show()
 
     def ouvrir_image_plan(self):
-        file_name, _ = QFileDialog.getOpenFileName(self, "Choisir une image", "", "Images (*.png *.jpg *.bmp *.jpeg)")
+        file_name, _ = QFileDialog.getOpenFileName(self, "Choisir un plan", "", "Images (*.png *.jpg *.bmp *.jpeg)")
         if file_name:
             self.grid_overlay.load_image(file_name)
             conn = sqlite3.connect("market_tracer.db")
@@ -505,6 +532,18 @@ class AdminWindow(QWidget):
             conn.commit()
             conn.close()
             self.sauvegarder_plan_et_quadrillage()
+
+    def confirm_reset(self):
+        reply = QMessageBox.question(self, "Confirmation",
+            "Êtes-vous sûr de vouloir tout réinitialiser ?", QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No)
+        if reply == QMessageBox.StandardButton.Yes:
+            self.grid_overlay.reset_colored_cells()
+
+    def confirm_remove(self):
+        reply = QMessageBox.question(self, "Confirmation",
+            "Êtes-vous sûr de vouloir retirer ce produit ?", QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No)
+        if reply == QMessageBox.StandardButton.Yes:
+            self.retirer_article_selectionne()
 
     def exporter_quadrillage_json(self):
         if self.grid_overlay.image_item is None:
@@ -558,6 +597,14 @@ class AdminWindow(QWidget):
         conn.commit()
         conn.close()
 
+    def _maj_filtre_categories(self):
+        self.filtre_combo.blockSignals(True)
+        self.filtre_combo.clear()
+        self.filtre_combo.addItem("Toutes les catégories")
+        for cat in sorted(self.categories, key=lambda x: x.lower()):
+            self.filtre_combo.addItem(cat)
+        self.filtre_combo.blockSignals(False)
+
 # ==============================================================
 
 # Fonction pour détecter le thème sombre du système
@@ -596,28 +643,12 @@ def is_dark_theme():
 
 # ==============================================================
 
-# Lancement de l'application
+# Programme principal pour débogage
 
 # ==============================================================
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
-    if is_dark_theme():
-        app.setStyle("Fusion")
-        dark_palette = app.palette()
-        dark_palette.setColor(dark_palette.Window, Qt.GlobalColor.black)
-        dark_palette.setColor(dark_palette.WindowText, Qt.GlobalColor.white)
-        dark_palette.setColor(dark_palette.Base, Qt.GlobalColor.black)
-        dark_palette.setColor(dark_palette.AlternateBase, Qt.GlobalColor.black)
-        dark_palette.setColor(dark_palette.ToolTipBase, Qt.GlobalColor.white)
-        dark_palette.setColor(dark_palette.ToolTipText, Qt.GlobalColor.white)
-        dark_palette.setColor(dark_palette.Text, Qt.GlobalColor.white)
-        dark_palette.setColor(dark_palette.Button, Qt.GlobalColor.black)
-        dark_palette.setColor(dark_palette.ButtonText, Qt.GlobalColor.white)
-        dark_palette.setColor(dark_palette.BrightText, Qt.GlobalColor.red)
-        dark_palette.setColor(dark_palette.Highlight, Qt.GlobalColor.darkGray)
-        dark_palette.setColor(dark_palette.HighlightedText, Qt.GlobalColor.black)
-        app.setPalette(dark_palette)
-    else:
-        app.setStyle("Fusion")
+    win = AdminWindow(1)
+    win.show()
     sys.exit(app.exec())
