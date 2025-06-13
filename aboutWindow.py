@@ -1,8 +1,8 @@
 # ==============================================================
 
 # Market Tracer - À propos
-# Développée par D. Melocco / S.Leclercq-Speter
-# Dernière modification : 11/06/2025 17h54
+# Développée par David Melocco et Simon Leclercq-Speter
+# Dernière modification : 11/06/2025
 
 # ==============================================================
 
@@ -15,10 +15,16 @@ from PyQt6.QtGui import QPixmap, QFont, QIcon
 from PyQt6.QtCore import Qt
 
 # ==============================================================
-# Page À propos
-
+# Fenêtre À propos de l'application Market Tracer
+# ==============================================================
 class AboutWindow(QWidget):
+    """Fenêtre À propos de l'application Market Tracer.
+
+    Args:
+        QWidget (QWidget): classe de base pour les widgets de l'interface graphique.
+    """
     def __init__(self):
+        """Initialisation de la fenêtre À propos."""
         super().__init__()
         self.setWindowTitle("Market Tracer - À propos")
         self.setWindowIcon(QIcon("img/logo_v1.png"))
@@ -26,6 +32,7 @@ class AboutWindow(QWidget):
         self.setup_ui()
 
     def setup_ui(self):
+        """Configuration de l'interface utilisateur de la fenêtre À propos."""
         # Layout principal vertical
         main_layout = QVBoxLayout(self)
         main_layout.setContentsMargins(20, 20, 20, 20)
@@ -50,20 +57,30 @@ class AboutWindow(QWidget):
         desc = QLabel(
             "Market Tracer est un outil compétent qui aide à la \n"
             "gestion des stocks des supermarchés et qui permet\n"
-            "à leurs clients fidèles de faire leurs courses efficacement\n\n"
-            "Ce Logiciel a été développé par :\n"
-            "D. Melocco / L. Pace--Boulnois / S. Leclercq-Speter / N. Colin \n"
+            "à leurs clients fidèles de faire leurs courses efficacement.\n\n"
         )
         desc.setFont(QFont("Arial", 12))
         desc.setWordWrap(True)
         desc.setAlignment(Qt.AlignmentFlag.AlignCenter) 
         main_layout.addWidget(desc)
 
+        # Auteurs
+        authors = QLabel(
+            "David Melocco\n"
+            "Lysandre Pace--Boulnois\n"
+            "Simon Leclercq-Speter\n"
+            "Noé Colin"
+        )
+        authors.setFont(QFont("Arial", 12))
+        authors.setAlignment(Qt.AlignmentFlag.AlignLeft)
+        authors.setStyleSheet("color: #555;")
+        main_layout.addWidget(authors)
+
 # ==============================================================
-# Mise en route de l'application
+# Exécution du programme pour débogage
 # ==============================================================
-if __name__ == "__main__":
-    app = QApplication(sys.argv)
-    win = AboutWindow()
-    win.show()
-    sys.exit(app.exec())
+# if __name__ == "__main__":
+#     app = QApplication(sys.argv)
+#     win = AboutWindow()
+#     win.show()
+#     sys.exit(app.exec())

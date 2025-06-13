@@ -50,17 +50,6 @@ def init_db():
                 FOREIGN KEY(user_id) REFERENCES users(id)
             )
         """)
-        # Ajout des colonnes si besoin (migration)
-        for col, typ in [
-            ("plan_json", "TEXT"),
-            ("articles_json", "TEXT"),
-            ("user_id", "INTEGER"),
-            ("plan_image", "BLOB")
-        ]:
-            try:
-                c.execute(f"ALTER TABLE shops ADD COLUMN {col} {typ}")
-            except sqlite3.OperationalError:
-                pass
         # Ajout d'utilisateurs de test
         c.execute("INSERT OR IGNORE INTO users (username, password, role) VALUES ('gerant', '1234', 'Gérant')")
         c.execute("INSERT OR IGNORE INTO users (username, password, role) VALUES ('employe', 'abcd', 'Employé')")

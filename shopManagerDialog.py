@@ -6,9 +6,13 @@
 #
 # ==============================================================
 
+# Importations
 import sqlite3
 from PyQt6.QtWidgets import QDialog, QVBoxLayout, QListWidget, QHBoxLayout, QPushButton, QMessageBox
 
+# ==============================================================
+# Boîte de dialogue pour la gestion des magasins
+# ==============================================================
 class ShopManagerDialog(QDialog):
     # Constructeur de la boîte de gestion des magasins
     def __init__(self, user_id, parent=None):

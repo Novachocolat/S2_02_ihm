@@ -1,7 +1,7 @@
 # ==============================================================
 
 # Market Tracer - Documentation
-# Développée par D. Melocco
+# Développée par David Melocco et Simon Leclercq-Speter
 # Dernière modification : 11/06/2025
 
 # ==============================================================
@@ -15,10 +15,16 @@ from PyQt6.QtGui import QPixmap, QFont, QIcon
 from PyQt6.QtCore import Qt
 
 # ==============================================================
-# Page Documentation
-
+# Fenêtre de documentation de l'application Market Tracer
+# ==============================================================
 class DocWindow(QWidget):
+    """Fenêtre de documentation de l'application Market Tracer.
+
+    Args:
+        QWidget (QWidget): classe de base pour les widgets de l'interface graphique.
+    """
     def __init__(self):
+        """Initialisation de la fenêtre de documentation."""
         super().__init__()
         self.setWindowTitle("Market Tracer - Documentation")
         self.setWindowIcon(QIcon("img/logo_v1.png"))
@@ -26,6 +32,7 @@ class DocWindow(QWidget):
         self.setup_ui()
 
     def setup_ui(self):
+        """Configuration de l'interface utilisateur de la fenêtre de documentation."""
         # Layout principal vertical
         main_layout = QVBoxLayout(self)
         main_layout.setContentsMargins(20, 20, 20, 20)
@@ -61,10 +68,10 @@ class DocWindow(QWidget):
         main_layout.addWidget(scroll)
 
 # ==============================================================
-# Mise en route de l'application
+# Exécution du programme pour débogage
 # ==============================================================
-if __name__ == "__main__":
-    app = QApplication(sys.argv)
-    win = DocWindow()
-    win.show()
-    sys.exit(app.exec())
+# if __name__ == "__main__":
+#     app = QApplication(sys.argv)
+#     win = DocWindow()
+#     win.show()
+#     sys.exit(app.exec())

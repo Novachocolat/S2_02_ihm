@@ -1,9 +1,12 @@
 # ==============================================================
-# Market Tracer - Quadrillage avec zoom synchrone
-# Développé par Lysandre Pace--Boulnois
-# Dernière modification : 12/06/2025
+
+# Market Tracer - Quadrillage (app n°1)
+# Développé par David Melocco et Simon Leclercq-Speter
+# Dernière modification : 13/06/2025
+
 # ==============================================================
 
+# Importations
 import sys
 import json
 from PyQt6.QtWidgets import (
@@ -14,57 +17,88 @@ from PyQt6.QtWidgets import (
 from PyQt6.QtGui import QDrag, QPixmap, QFont, QBrush, QPen, QColor
 from PyQt6.QtCore import QMimeData, Qt, QRectF, pyqtSignal
 
+# ==============================================================
+# Quadrillage avec des cellules colorées
+# ==============================================================
 class GridOverlay(QGraphicsView):
+    """Vue graphique avec un quadrillage et des cellules coloriées pour un plan de marché."""
     grid_modified = pyqtSignal()
 
     def __init__(self):
+        """Initialise la vue avec une scène graphique, un quadrillage et des cellules coloriées."""
         super().__init__()
         self.scene = QGraphicsScene(self)
         self.setScene(self.scene)
         self.image_item = None
         self.grid_size = 50
         self.entrance_number = 0
+
         self.colored_cells = {}
         self.objects_in_cells = {}
         self.setMouseTracking(True)
+
+        # Coefficient de zoom
         self.zoom_factor = 1.0
 
-        # Couleurs des éléments du plan
+        # Couleurs des éléments du plan 
         self.color_types = {
-            'Rayon': QColor(0, 0, 255, 120),
-            'Caisse': QColor(255, 255, 0, 120),
-            'Entrée': QColor(255, 0, 0, 120),
-            'Mur': QColor(128, 128, 128, 120),
-            'Stock': QColor(0, 255, 0, 120),
+            'Rayon': QColor(0, 0, 255, 120), # Bleu pour les rayons
+            'Caisse': QColor(255, 255, 0, 120), # Jaune pour les caisses
+            'Entrée': QColor(255, 0, 0, 120), # Rouge pour l'entrée
+            'Mur': QColor(128, 128, 128, 120), # Gris pour les murs
+            'Stock': QColor(0, 255, 0, 120), # Vert pour les stocks
         }
 
-        # Mapping des catégories vers émojis
+        # Tous les rayons du JSON 
         self.emoji_mapping = {
-            "Fruits": "🍎", "Légumes": "🥦", "Viandes": "🍖", "Poissons": "🐟",
-            "Boulangerie": "🥖", "Fromages": "🧀", "Boissons": "🥤", "Produits laitiers": "🥛",
-            "Rayon frais": "🥪", "Crèmerie": "🧈", "Conserves": "🥫", "Apéritifs": "🍘",
-            "Épicerie": "🛒", "Épicerie sucrée": "🍬", "Petit déjeuner": "🥐",
-            "Articles Maison": "🧹", "Hygiène": "🧴", "Bureau": "🖊️", "Animaux": "🐾",
+            "Fruits": "🍎",
+            "Légumes": "🥦",
+            "Viandes": "🍖",
+            "Poissons": "🐟",
+            "Boulangerie": "🥖",
+            "Fromages": "🧀",
+            "Boissons": "🥤",
+            "Produits laitiers": "🥛",
+            "Rayon frais": "🥪",
+            "Crèmerie": "🧈",
+            "Conserves": "🥫",
+            "Apéritifs": "🍘",
+            "Épicerie": "🛒",
+            "Épicerie sucrée": "🍬",
+            "Petit déjeuner": "🥐",
+            "Articles Maison": "🧹",
+            "Hygiène": "🧴",
+            "Bureau": "🖊️",
+            "Animaux": "🐾",
             "Autre": "📦"
         }
 
         self.current_color_type = 'Rayon'
         self.is_painting = False
         self.setAcceptDrops(True)
+
         self.is_panning = False
         self.last_pan_point = None
+
         self.setDragMode(QGraphicsView.DragMode.NoDrag)
         self.setInteractive(True)
 
-    # Chargement du plan
     def load_image(self, path):
+        """Charge une image et l'affiche dans la vue avec un quadrillage.
+
+        Args:
+            path (str): chemin d'accès à l'image.
+        """
         pixmap = QPixmap(path)
         if pixmap.isNull():
             print("Erreur de chargement d'image")
             return
+
         self.scene.clear()
         self.colored_cells.clear()
         self.objects_in_cells.clear()
+
+        # Créer l'image
         self.image_item = QGraphicsPixmapItem(pixmap)
         self.scene.addItem(self.image_item)
         self.setSceneRect(QRectF(pixmap.rect()))
@@ -73,22 +107,25 @@ class GridOverlay(QGraphicsView):
         self.resetTransform()
         self.scale(self.zoom_factor, self.zoom_factor)
 
-    # Dessin de la grille et des objets
     def draw_grid(self):
+        """Dessine le quadrillage et les cellules colorées sur l'image chargée."""
         if not self.image_item:
             return
+
         # Supprime tout sauf l'image de fond
         for item in self.scene.items():
             if isinstance(item, QGraphicsPixmapItem):
                 continue
             self.scene.removeItem(item)
         rect = self.image_item.boundingRect()
+
         # Cases coloriées et émojis
         for (row, col), color in self.colored_cells.items():
             x = col * self.grid_size
             y = row * self.grid_size
             cell_rect = QRectF(x, y, self.grid_size, self.grid_size)
             self.scene.addRect(cell_rect, QPen(Qt.PenStyle.NoPen), QBrush(color))
+
             # Affichage de l'émoji centré si objet présent
             if (row, col) in self.objects_in_cells:
                 obj_data = self.objects_in_cells[(row, col)]
@@ -106,42 +143,66 @@ class GridOverlay(QGraphicsView):
                     offset_x = x + (self.grid_size - text_rect.width()) / 2
                     offset_y = y + (self.grid_size - text_rect.height()) / 2
                     text_item.setPos(offset_x, offset_y)
-        # Grille
+
         pen = QPen(Qt.GlobalColor.red)
         pen.setWidth(2)
+
         x = 0
         while x <= rect.width():
             self.scene.addLine(x, 0, x, rect.height(), pen)
             x += self.grid_size
+
         y = 0
         while y <= rect.height():
             self.scene.addLine(0, y, rect.width(), y, pen)
             y += self.grid_size
+
         self.grid_modified.emit()
 
     def set_grid_size(self, size):
+        """Définit la taille de la grille et redessine le quadrillage.
+
+        Args:
+            size (int): taille de la grille en pixels.
+        """
         self.grid_size = size
         self.draw_grid()
 
     def set_pan_mode(self, enable):
+        """Définit le mode de déplacement (pan) de la vue.
+
+        Args:
+            enable (bool): True pour activer le mode de déplacement, False pour le désactiver.
+        """
         self.is_panning = enable
-        self.setCursor(Qt.CursorShape.OpenHandCursor if enable else Qt.CursorShape.ArrowCursor)
+        if enable:
+            self.setCursor(Qt.CursorShape.OpenHandCursor)
+        else:
+            self.setCursor(Qt.CursorShape.ArrowCursor)
 
     def set_current_color(self, color_type):
         self.current_color_type = color_type
 
     def color_cell_at_position(self, scene_pos):
+        """Colore une cellule à la position donnée dans la scène.
+
+        Args:
+            scene_pos (dict): position de la souris dans la scène.
+        """
         x, y = scene_pos.x(), scene_pos.y()
+
         col, row = int(x // self.grid_size), int(y // self.grid_size)
         cell_key = (row, col)
-        # Limite à une seule entrée
+
+        # Limiter à une seule entrée
         if self.current_color_type == 'Entrée':
             if self.entrance_number >= 1:
                 QMessageBox.warning(self, "Erreur", "Il ne peut y avoir qu'une seule entrée.")
                 self.is_painting = False
                 return
             self.entrance_number = 1
-        # Gomme
+
+        # Si on est en mode gomme, on supprime la cellule
         if self.current_color_type == 'Gomme':
             if self.colored_cells.get(cell_key) == self.color_types['Entrée']:
                 self.entrance_number = 0
@@ -150,10 +211,13 @@ class GridOverlay(QGraphicsView):
         else:
             color = self.color_types[self.current_color_type]
             self.colored_cells[cell_key] = color
+
         self.draw_grid()
+
         self.grid_modified.emit()
 
     def reset_colored_cells(self):
+        """Réinitialise le quadrillage en supprimant toutes les cellules coloriées et les objets."""
         self.colored_cells.clear()
         self.objects_in_cells.clear()
         self.draw_grid()
@@ -161,8 +225,15 @@ class GridOverlay(QGraphicsView):
 
     # Drag & Drop
     def mousePressEvent(self, event):
+        """Gère l'appui de la souris pour le déplacement ou la peinture.
+
+        Args:
+            event (func): événement de la souris.
+        """
         if not self.image_item:
             return
+
+        # Mode de déplacement
         if self.is_panning:
             if event.button() == Qt.MouseButton.LeftButton:
                 self.setCursor(Qt.CursorShape.ClosedHandCursor)
@@ -174,10 +245,17 @@ class GridOverlay(QGraphicsView):
                 self.color_cell_at_position(scene_pos)
 
     def mouseMoveEvent(self, event):
+        """Gère le mouvement de la souris pour afficher des informations sur les cellules ou peindre.
+
+        Args:
+            event (func): événement de la souris.
+        """
         scene_pos = self.mapToScene(event.pos())
         col = int(scene_pos.x() // self.grid_size)
         row = int(scene_pos.y() // self.grid_size)
         cell_key = (row, col)
+
+        # Afficher des informations sur la cellule
         if self.is_panning and self.last_pan_point:
             delta = event.pos() - self.last_pan_point
             self.last_pan_point = event.pos()
@@ -197,6 +275,11 @@ class GridOverlay(QGraphicsView):
                 QToolTip.hideText()
 
     def mouseReleaseEvent(self, event):
+        """Gère le relâchement de la souris pour arrêter le déplacement ou la peinture.
+
+        Args:
+            event (func): événement de la souris.
+        """
         if self.is_panning:
             self.setCursor(Qt.CursorShape.OpenHandCursor)
             self.last_pan_point = None
@@ -204,40 +287,66 @@ class GridOverlay(QGraphicsView):
             self.is_painting = False
 
     def dragEnterEvent(self, event):
+        """Gère l'entrée d'un objet dans la vue pour le drag & drop.
+
+        Args:
+            event (func): événement de drag.
+        """
         event.accept()
 
     def dragMoveEvent(self, event):
+        """Gère le mouvement d'un objet pendant le drag & drop.
+
+        Args:
+            event (func): événement de drag.
+        """
         event.accept()
 
     def dropEvent(self, event):
+        """Gère le dépôt d'un objet dans la vue pour le drag & drop.
+
+        Args:
+            event (func): événement de drag.
+        """
         if not self.image_item:
             return
+
         data = event.mimeData().text()
+
+        # On récupère la catégorie et le produit depuis le texte drag & drop
         if "::" in data:
             category, product = data.split("::", 1)
-            category = category.strip()
-            product = product.strip()
+            obj_name = product.strip()  
         else:
-            category = "Autre"
-            product = data.strip().replace('"', '').replace("'", "").strip()
-        if category not in self.emoji_mapping:
-            category = "Autre"
+            obj_name = data.strip().replace('"', '').replace("'", "").strip()
+
+        # On garde l'emoji sur la catégorie pour l'afficher dans le graphique
+        category_name = category.strip() if "::" in data else "Autre"
+
+        if category_name not in self.emoji_mapping:
+            category_name = "Autre"
+
         scene_pos = self.mapToScene(event.position().toPoint())
         col = int(scene_pos.x() // self.grid_size)
         row = int(scene_pos.y() // self.grid_size)
         cell_key = (row, col)
-        allowed_types = ["Rayon", "Stock"]
+
+        # On autorise les dépôts sur Rayon ET Stock
+        allowed_types = ["Rayon", "Stock"]  
         cell_color = self.colored_cells.get(cell_key)
-        # Compare les couleurs par valeur RGBA pour robustesse
-        if any(cell_color and cell_color.rgba() == self.color_types[cell_type].rgba() for cell_type in allowed_types):
-            self.objects_in_cells[cell_key] = {"category": category, "product": product}
+
+        if any(cell_color == self.color_types[cell_type] for cell_type in allowed_types):
+            self.objects_in_cells[cell_key] = {"category": category_name, "product": obj_name}
             self.draw_grid()
             self.grid_modified.emit()
         else:
-            QMessageBox.warning(self, "Attention", "Vous ne pouvez déposer que sur des Rayons (bleus) ou Stocks (verts).")
+            QMessageBox.warning(self, "Attention", "Vous ne pouvez déposer que sur des Rayons ou Stocks.")
 
-    # Export JSON (fichier ou buffer)
+# ==============================================================
+# Exportation et importation par Lysandre Pace-Boulnois
+# ==============================================================
     def export_cells_to_json(self, path_or_buffer):
+        """Exporte les cellules coloriées et les objets en JSON."""
         data = {
             "grid_size": self.grid_size,
             "cells": []
@@ -269,13 +378,18 @@ class GridOverlay(QGraphicsView):
             QMessageBox.warning(self, "Erreur", f"Erreur lors de l'exportation : {e}")
 
     def export_cells_to_json_string(self):
+        """Exporte les cellules coloriées et les objets en JSON sous forme de chaîne."""
         import io
         buffer = io.StringIO()
         self.export_cells_to_json(buffer)
         return buffer.getvalue()
 
-    # Import JSON depuis un fichier
     def import_cells_from_json(self, path):
+        """Importe les cellules coloriées et les objets depuis un fichier JSON.
+
+        Args:
+            path (str): chemin d'accès au fichier JSON.
+        """
         try:
             with open(path, "r", encoding="utf-8") as f:
                 data = json.load(f)
@@ -283,16 +397,20 @@ class GridOverlay(QGraphicsView):
         except Exception as e:
             print(f"Erreur lors de l'importation : {e}")
 
-    # Import JSON depuis une chaîne
     def import_cells_from_json_content(self, json_content):
+        """Importe les cellules coloriées et les objets depuis une chaîne JSON.
+
+        Args:
+            json_content (str): chaîne JSON contenant les données des cellules.
+        """
         try:
             data = json.loads(json_content)
             self._import_cells_from_data(data)
         except Exception as e:
             print(f"Erreur lors de l'importation (content) : {e}")
 
-    # Facteur commun d'import
     def _import_cells_from_data(self, data):
+        """Importe les cellules coloriées et les objets depuis un dictionnaire ou une liste."""
         self.colored_cells.clear()
         self.objects_in_cells.clear()
         self.entrance_number = 0
@@ -322,7 +440,21 @@ class GridOverlay(QGraphicsView):
                     self.entrance_number = 1
         self.draw_grid()
 
+    def set_zoom(self, factor):
+        """Ajuste le zoom global du plan."""
+        self.resetTransform()
+        self.scale(factor, factor)
+        self.zoom_factor = factor
+
+# ==============================================================
+# Liste déroulante avec drag & drop
+# ==============================================================
 class DraggableListWidget(QListWidget):
+    """Liste déroulante avec des éléments pouvant être glissés et déposés.
+
+    Args:
+        QListWidget (QListWidget): classe PyQt6 pour la liste déroulante.
+    """
     def startDrag(self, supportedActions):
         item = self.currentItem()
         if not item:
@@ -333,15 +465,23 @@ class DraggableListWidget(QListWidget):
         drag.setMimeData(mime)
         drag.exec(supportedActions)
 
+# ==============================================================
+# Programme principal
+# ==============================================================
 class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
         self.setWindowTitle("Quadrillage")
+
         self.grid_view = GridOverlay()
+
+        # Bloc JSON gauche
         self.json_list = DraggableListWidget()
         self.json_list.setDragEnabled(True)
+
         load_json_btn = QPushButton("Charger les produits")
         load_json_btn.clicked.connect(self.load_json_list)
+
         json_layout = QVBoxLayout()
         json_layout.addWidget(load_json_btn)
         json_layout.addWidget(self.json_list)
@@ -398,9 +538,9 @@ class MainWindow(QMainWindow):
         self.zoom_slider = QSlider(Qt.Orientation.Vertical)
         self.zoom_slider.setMinimum(10)
         self.zoom_slider.setMaximum(300)
-        self.zoom_slider.setValue(100)
+        self.zoom_slider.setValue(50)
         self.zoom_slider.valueChanged.connect(self.on_zoom_changed)
-        self.zoom_label = QLabel("100%")
+        self.zoom_label = QLabel("50%")
         self.zoom_label.setAlignment(Qt.AlignmentFlag.AlignHCenter)
         zoom_layout.addWidget(self.zoom_slider)
         zoom_layout.addWidget(self.zoom_label)

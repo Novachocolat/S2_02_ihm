@@ -9,13 +9,15 @@
 # Importations
 from PyQt6.QtWidgets import (
     QDialog, QLabel, QVBoxLayout, QHBoxLayout, QLineEdit, QTextEdit, QPushButton,
-    QFileDialog, QApplication, QDateEdit, QGroupBox, QFormLayout, QMessageBox
+    QFileDialog, QDateEdit, QGroupBox, QFormLayout, QMessageBox
 )
 from PyQt6.QtGui import QFont, QIcon, QPixmap
 from PyQt6.QtCore import Qt, QDate
-import sys
-import sqlite3
+import os, sqlite3
 
+# ==============================================================
+# Fenêtre principale de la configuration d'un magasin
+# ==============================================================
 class CreateShopWindow(QDialog): 
     """Classe pour la fenêtre de configuration d'un magasin.
 
@@ -31,6 +33,22 @@ class CreateShopWindow(QDialog):
         self.setMaximumSize(500, 600)
         self.user_id = user_id
         self.shop_data = shop_data
+        if self.shop_data is None:
+            conn = sqlite3.connect("market_tracer.db")
+            c = conn.cursor()
+            c.execute("SELECT nom, auteur, date_creation, apropos, chemin, articles_json, plan_json FROM shops WHERE user_id=?", (self.user_id,))
+            row = c.fetchone()
+            if row:
+                self.shop_data = {
+                    "nom": row[0] or "",
+                    "auteur": row[1] or "",
+                    "date_creation": row[2] or "",
+                    "apropos": row[3] or "",
+                    "chemin": row[4] or "",
+                    "articles_json": row[5] or "",
+                    "plan_json": row[6] or ""
+                }
+            conn.close()
         self.setup_ui()
 
     def setup_ui(self):
@@ -137,15 +155,20 @@ class CreateShopWindow(QDialog):
             self.date_input.setDate(QDate.fromString(self.shop_data.get("date_creation", ""), "dd/MM/yyyy"))
             self.apropos_input.setPlainText(self.shop_data.get("apropos", ""))
             self.chemin_input.setText(self.shop_data.get("chemin", ""))
-            self.json_input.setText(self.shop_data.get("articles_json", ""))
-            self.plan_json_input.setText(self.shop_data.get("plan_json", ""))
+
+            articles_json = self.shop_data.get("articles_json", "")
+            self.json_input.setText(articles_json)
+
+            plan_json = self.shop_data.get("plan_json", "")
+            self.plan_json_input.setText(plan_json)
 
     def finish(self):
         """Enregistre les données du magasin dans la base de données."""
         nom = self.nom_input.text()
         if not nom:
-            QMessageBox.warning(self, "Champ obligatoire", "Le nom du magasin est obligatoire.")
+            QMessageBox.warning(self, "Erreur", "Le nom du magasin est obligatoire.")
             return
+
         auteur = self.auteur_input.text()
         date = self.date_input.date().toString("dd/MM/yyyy")
         apropos = self.apropos_input.toPlainText()
@@ -153,40 +176,41 @@ class CreateShopWindow(QDialog):
         json_path = self.json_input.text()
         plan_json_path = self.plan_json_input.text()
 
-        articles_json_content = None
-        if json_path:
-            try:
-                with open(json_path, "r", encoding="utf-8") as f:
-                    articles_json_content = f.read()
-            except Exception:
-                articles_json_content = None
+        # # Lire le contenu du fichier JSON des articles si le chemin existe
+        # articles_json_content = None
+        # if json_path and os.path.isfile(json_path):
+        #     with open(json_path, "r", encoding="utf-8") as f:
+        #         articles_json_content = f.read()
 
-        plan_json_content = None
-        if plan_json_path:
-            try:
-                with open(plan_json_path, "r", encoding="utf-8") as f:
-                    plan_json_content = f.read()
-            except Exception:
-                plan_json_content = None
+        # plan_json_content = None
+        # if plan_json_path and os.path.isfile(plan_json_path):
+        #     with open(plan_json_path, "r", encoding="utf-8") as f:
+        #         plan_json_content = f.read()
 
+        # Relatif à la base de données
+        import sqlite3
         conn = sqlite3.connect("market_tracer.db")
         c = conn.cursor()
+
+        # Vérifier si le magasin existe déjà pour cet utilisateur
         c.execute("SELECT id FROM shops WHERE user_id=?", (self.user_id,))
         row = c.fetchone()
         if row:
+            # Mise à jour
             c.execute("""
                 UPDATE shops SET nom=?, auteur=?, date_creation=?, apropos=?, chemin=?, articles_json=?, plan_json=?
                 WHERE user_id=?
-            """, (nom, auteur, date, apropos, chemin, articles_json_content, plan_json_content, self.user_id))
+            """, (nom, auteur, date, apropos, chemin, json_path, plan_json_path, self.user_id))
         else:
+            # Insertion
             c.execute("""
-                INSERT INTO shops (nom, auteur, date_creation, apropos, chemin, articles_json, plan_json, user_id)
+                INSERT INTO shops (user_id, nom, auteur, date_creation, apropos, chemin, articles_json, plan_json)
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-            """, (nom, auteur, date, apropos, chemin, articles_json_content, plan_json_content, self.user_id))
+            """, (self.user_id, nom, auteur, date, apropos, chemin, json_path, plan_json_path))
         conn.commit()
         conn.close()
 
-        self.close()
+        self.accept()
 
     def browse_file(self):
         """Ouvre un dialogue pour sélectionner une image du plan du magasin."""
@@ -221,8 +245,7 @@ class CreateShopWindow(QDialog):
 # ==============================================================
 # Exécution du programme pour débogage
 # ==============================================================
-if __name__ == "__main__":
-    app = QApplication(sys.argv)
-    win = CreateShopWindow(0)
-    win.show()
-    sys.exit(app.exec())
+# if __name__ == "__main__":
+#     app = QApplication(sys.argv)
+#     win = CreateShopWindow(1)
+#     win.exec()

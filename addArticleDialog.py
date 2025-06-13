@@ -6,14 +6,29 @@
 #
 # ==============================================================
 
-from PyQt6.QtWidgets import QDialog, QLineEdit, QComboBox, QFormLayout, QDialogButtonBox
+from PyQt6.QtWidgets import (
+    QDialog, QLineEdit, QComboBox, QFormLayout, QDialogButtonBox
+)
 from PyQt6.QtGui import QIcon
 
+# ==============================================================
+# Fenêtre de dialogue pour ajouter un article
+# ==============================================================
 class AddArticleDialog(QDialog):
+    """Boîte de dialogue pour ajouter un article.
+
+    Args:
+        QDialog (QDialog): classe de base pour les boîtes de dialogue.
+    """
     def __init__(self, categories, parent=None):
+        """Initialisation de la boîte de dialogue d'ajout d'article.
+        Args:
+            categories (list): liste des catégories disponibles.
+            parent (QWidget, optional): widget parent de la boîte de dialogue. Par défaut, None.
+        """
         super().__init__(parent)
         self.setWindowTitle("Ajouter un article")
-        self.setWindowIcon(QIcon("img/chariot.png"))
+        self.setWindowIcon(QIcon("img/logo_v1.png"))
         self.setMinimumWidth(300)
         layout = QFormLayout(self)
 

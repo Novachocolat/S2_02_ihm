@@ -1,8 +1,8 @@
 # ==============================================================
 
 # Market Tracer - Licence
-# Développée par D. Melocco / S. Leclercq-Speter
-# Dernière modification : 11/06/2025    17h12
+# Développée par David Melocco et Simon Leclercq-Speter
+# Dernière modification : 11/06/2025
 
 # ==============================================================
 
@@ -15,10 +15,16 @@ from PyQt6.QtGui import QPixmap, QFont, QIcon
 from PyQt6.QtCore import Qt
 
 # ==============================================================
-# Page Licence
-
+# Fenetres de licence de l'application Market Tracer
+# ==============================================================
 class LicenceWindow(QWidget):
+    """Fenêtre de licence de l'application Market Tracer.
+
+    Args:
+        QWidget (QWidget): classe de base pour les widgets de l'interface graphique.
+    """
     def __init__(self):
+        """Initialisation de la fenêtre de licence."""
         super().__init__()
         self.setWindowTitle("Market Tracer - Licence")
         self.setWindowIcon(QIcon("img/logo_v1.png"))
@@ -26,6 +32,7 @@ class LicenceWindow(QWidget):
         self.setup_ui()
 
     def setup_ui(self):
+        """Configuration de l'interface utilisateur de la fenêtre de licence."""
         # Layout principal vertical
         main_layout = QVBoxLayout(self)
         main_layout.setContentsMargins(20, 20, 20, 20)
