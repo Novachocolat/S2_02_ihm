@@ -23,8 +23,10 @@ import json
 
 # =============================================================
 class EmployeeWindow(QWidget):
-    def __init__(self):
+    def __init__(self, articles_json=None, plan_path=None):
         super().__init__()
+        self.articles_json = articles_json
+        self.plan_path = plan_path
         self.setWindowTitle("Market Tracer - Employé")
         self.setWindowIcon(QIcon("img/chariot.png"))
         self.resize(1400, 900)

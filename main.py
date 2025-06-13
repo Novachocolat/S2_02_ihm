@@ -6,7 +6,7 @@ import sys
 import sqlite3
 from PyQt6.QtWidgets import (
     QApplication, QWidget, QLabel, QLineEdit, QPushButton, QHBoxLayout,
-    QVBoxLayout, QGridLayout, QFrame
+    QVBoxLayout, QGridLayout, QFrame, QMessageBox
 )
 from PyQt6.QtGui import QFont, QIcon
 from PyQt6.QtCore import Qt
@@ -205,18 +205,30 @@ class LoginWindow(QWidget):
         role = self.selected_role
         conn = sqlite3.connect("users.db")
         c = conn.cursor()
-        c.execute("SELECT * FROM users WHERE username=? AND password=? AND role=?", (username, password, role))
+        c.execute("SELECT id, shop_id FROM users WHERE username=? AND password=? AND role=?", (username, password, role))
         user = c.fetchone()
         conn.close()
         if user:
+            user_id, shop_id = user
             print(f"Connexion réussie pour {username} avec le rôle {role}.")
             # Redirection selon le rôle
             if role == "Gérant":
                 self.open_admin_window()
                 self.close()
             elif role == "Employé":
-                self.open_employee_window() 
-                self.close()
+                shop_id = user[4]
+                if shop_id:
+                    c.execute("SELECT articles_json, chemin FROM shops WHERE id=?", (shop_id,))
+                    shop_info = c.fetchone()
+                    if shop_info:
+                        articles_json, plan_path = shop_info
+                        self.employee_window = EmployeeWindow()
+                        self.employee_window.show()
+                        self.close()
+                    else:
+                        QMessageBox.warning(self, "Erreur", "Aucun magasin associé à ce compte employé.")
+                else:
+                    QMessageBox.warning(self, "Erreur", "Aucun magasin associé à ce compte employé.")
         else:
             self.error_label.setText("Nom d'utilisateur, mot de passe ou rôle incorrect.")
 
@@ -233,9 +245,10 @@ class LoginWindow(QWidget):
         self.admin_window = AdminWindow()
         self.admin_window.show()
     
-    def open_employee_window(self):
-        self.employee_window = EmployeeWindow()
+    def open_employee_window(self, articles_json, plan_path):
+        self.employee_window = EmployeeWindow(articles_json, plan_path)
         self.employee_window.show()
+        self.close()
 
 
 # ==============================================================
