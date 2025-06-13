@@ -48,11 +48,18 @@ class AdminWindow(QWidget):
 
         # Fichier
         fichier_menu = menubar.addMenu("Fichier")
-        fichier_menu.addAction("Ouvrir")
+
+        # Charger
         action_charger = fichier_menu.addAction("Charger")
         action_charger.triggered.connect(self.ouvrir_gestion_magasins)
-        fichier_menu.addAction("Fermer")
-        fichier_menu.addAction("Exporter")
+
+        # Sauvegarder
+        action_sauvegarder = fichier_menu.addAction("Sauvegarder")
+        # Il faut recup le code sauvegarde dans plan
+
+        # Fermer
+        action_fermer = fichier_menu.addAction("Fermer")
+        action_fermer.triggered.connect(self.fermer_magasin_actuel)
 
         # Gestion
         gestion_menu = menubar.addMenu("Gestion")
@@ -341,6 +348,21 @@ class AdminWindow(QWidget):
             self.afficher_stocks_depuis_json(result[0])
         else:
             self.status_bar.setText("Aucun article associé à ce magasin.")
+            
+    def fermer_magasin_actuel(self):
+        print("[AdminWindow] Fermeture du magasin en cours")
+        self.stocks_list.clear()
+        self.produit_categorie_map.clear()
+        self.categories = set()
+        self.filtre_combo.blockSignals(True)
+        self.filtre_combo.clear()
+        self.filtre_combo.addItem("Toutes les catégories")
+        self.filtre_combo.blockSignals(False)
+        self.search_input.clear()
+        self.produit_label.setText("Produit : ...")
+        self.categorie_label.setText("Catégorie : ...")
+        self.status_bar.setText("Aucun magasin ouvert.")
+
 
     def ouvrir_fichier_json(self):
         print("[AdminWindow] Ouverture d'un fichier JSON")
