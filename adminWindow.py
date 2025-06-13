@@ -48,11 +48,12 @@ class AdminWindow(QWidget):
         # Menu déroulant
         menubar = QMenuBar()
         fichier_menu = menubar.addMenu("Fichier")
-        fichier_menu.addAction("Ouvrir")
+        fichier_menu.addAction("Sauvegarder")
         action_charger = fichier_menu.addAction("Charger")
         action_charger.triggered.connect(self.ouvrir_gestion_magasins)
+        fichier_menu.addAction("Sauvegarder")
         fichier_menu.addAction("Fermer")
-        fichier_menu.addAction("Exporter")
+        
 
         gestion_menu = menubar.addMenu("Gestion")
         action_modifier_magasin = gestion_menu.addAction("Modifier mon magasin")

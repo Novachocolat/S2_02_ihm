@@ -321,6 +321,12 @@ class GridOverlay(QGraphicsView):
                 if type_str == "Entrée":
                     self.entrance_number = 1
         self.draw_grid()
+        
+    def set_zoom(self, factor):
+        """Ajuste le zoom global du plan."""
+        self.resetTransform()
+        self.scale(factor, factor)
+        self.zoom_factor = factor
 
 class DraggableListWidget(QListWidget):
     def startDrag(self, supportedActions):
