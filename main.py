@@ -1,12 +1,17 @@
 # ==============================================================
+
 # Market Tracer - Page de connexion
+# Développée par L. Pace--Boulnois et D. Melocco
+# Dernière modification : 11/06/2025
+
 # ==============================================================
+
 # Importations
-import sys
+import sys, random as rand
 import sqlite3
 from PyQt6.QtWidgets import (
     QApplication, QWidget, QLabel, QLineEdit, QPushButton, QHBoxLayout,
-    QVBoxLayout, QGridLayout, QFrame
+    QVBoxLayout, QGridLayout, QFrame, QMessageBox
 )
 from PyQt6.QtGui import QFont, QIcon
 from PyQt6.QtCore import Qt 
@@ -14,9 +19,11 @@ from adminWindow import AdminWindow
 from employeeWindow import EmployeeWindow
 from customerWindow import CustomerWindow
 from createShopWindow import CreateShopWindow
-# ==============================================================
+from shopSelectorDialog import ShopSelectorDialog
 
+# ==============================================================
 # Création de la base de données et de la table des utilisateurs
+
 def init_db():
     conn = sqlite3.connect("market_tracer.db")
     c = conn.cursor()
@@ -30,6 +37,32 @@ def init_db():
             first_login INTEGER DEFAULT 1
         )
     ''')
+
+    # Création de la base de données et de la table si besoin
+    c.execute("""
+        CREATE TABLE IF NOT EXISTS shops (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            nom TEXT,
+            auteur TEXT,
+            date_creation TEXT,
+            apropos TEXT,
+            chemin TEXT,
+            articles_json TEXT,
+            user_id INTEGER,
+            FOREIGN KEY(user_id) REFERENCES users(id)
+        )
+    """)
+    # S'assure que la colonne articles_json existe
+    try:
+        c.execute("ALTER TABLE shops ADD COLUMN articles_json TEXT")
+    except sqlite3.OperationalError:
+        pass
+
+    try:
+        c.execute("ALTER TABLE shops ADD COLUMN user_id INTEGER")
+    except sqlite3.OperationalError:
+        pass
+
     
     # Ajout d'utilisateurs de test
     c.execute("INSERT OR IGNORE INTO users (username, password, role) VALUES ('gerant', '1234', 'Gérant')")
@@ -46,16 +79,17 @@ class LoginWindow(QWidget):
         self.setWindowIcon(QIcon("img/chariot.png"))
         self.setFixedSize(800, 600)
         self.selected_role = "Gérant"
+        self.rand_banner = rand.randrange(1, 6)
         self.setup_ui()
 
+    # Initialise l'interface utilisateur de la fenêtre de connexion
     def setup_ui(self):
         # Layout principal horizontal
         main_layout = QHBoxLayout(self)
-        main_layout.setContentsMargins(0, 0, 0, 0)
+        main_layout.setContentsMargins(10, 10, 10, 10)
 
-        # Partie gauche (formulaire)
         left_frame = QFrame()
-        left_frame.setStyleSheet("background: #f7f7fb;")
+
         left_layout = QVBoxLayout(left_frame)
         left_layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
@@ -68,7 +102,7 @@ class LoginWindow(QWidget):
         # Connexion titre
         title = QLabel("Connexion")
         title.setFont(QFont("Arial", 32, QFont.Weight.Bold))
-        title.setStyleSheet("margin-top: 40px; margin-bottom: 20px; color: #222;")
+        title.setStyleSheet("margin-top: 40px; margin-bottom: 20px;")
         left_layout.addWidget(title, alignment=Qt.AlignmentFlag.AlignHCenter)
 
         # Boutons rôle
@@ -77,6 +111,7 @@ class LoginWindow(QWidget):
         for role in ["Gérant", "Employé", "Client"]:
             btn = QPushButton(role)
             btn.setCheckable(True)
+            btn.setMaximumWidth(110)
             btn.setStyleSheet("""
                 QPushButton {
                     background: #4be39a;
@@ -96,7 +131,8 @@ class LoginWindow(QWidget):
             self.role_buttons[role] = btn
             role_layout.addWidget(btn)
         self.role_buttons["Gérant"].setChecked(True)
-        left_layout.addLayout(role_layout)
+        left_layout.addLayout(role_layout, stretch=0)
+        left_layout.setAlignment(role_layout, Qt.AlignmentFlag.AlignHCenter)
         left_layout.addSpacing(20)
 
         # Formulaire
@@ -105,15 +141,15 @@ class LoginWindow(QWidget):
         # Nom d'utilisateur
         self.user_label = QLabel("Nom d'utilisateur")
         self.user_label.setFont(QFont("Arial", 10, QFont.Weight.Bold))
-        self.user_label.setStyleSheet("color: #222;")
         self.user_input = QLineEdit()
+        self.user_input.setMaximumWidth(310)
         self.user_input.setPlaceholderText("Entrez votre nom d'utilisateur")
         self.user_input.setStyleSheet("background: #bdbdbd; border-radius: 4px; padding: 6px; color: #222;")
         # Mot de passe
         self.pass_label = QLabel("Mot de passe")
         self.pass_label.setFont(QFont("Arial", 10, QFont.Weight.Bold))
-        self.pass_label.setStyleSheet("color: #222;")
         self.pass_input = QLineEdit()
+        self.pass_input.setMaximumWidth(310)
         self.pass_input.setPlaceholderText("Entrez votre mot-de-passe")
         self.pass_input.setEchoMode(QLineEdit.EchoMode.Password)
         self.pass_input.setStyleSheet("background: #bdbdbd; border-radius: 4px; padding: 6px; color: #222;")
@@ -126,7 +162,7 @@ class LoginWindow(QWidget):
         left_layout.addSpacing(20)
 
         # Bouton connexion
-        self.login_btn = QPushButton("Connexion")
+        self.login_btn = QPushButton("Se connecter")
         self.login_btn.setStyleSheet("""
             QPushButton {
                 background: #bdbdbd;
@@ -140,18 +176,19 @@ class LoginWindow(QWidget):
             }
         """)
         self.login_btn.clicked.connect(self.try_login)
+        self.pass_input.returnPressed.connect(self.try_login)
         left_layout.addWidget(self.login_btn)
-        self.enter_btn = QPushButton("Entrer")
+        self.enter_btn = QPushButton("Ouvrir une session")
         self.enter_btn.setStyleSheet("""
             QPushButton {
-                background: #4be39a;
+                background: #bdbdbd;
                 color: #222;
                 border-radius: 4px;
                 min-height: 36px;
                 font-size: 18px;
             }
             QPushButton:pressed {
-                background: #2fa76a;
+                background: #888;
             }
         """)
         self.enter_btn.clicked.connect(self.enter_as_client)
@@ -165,25 +202,28 @@ class LoginWindow(QWidget):
         left_layout.addWidget(self.error_label, alignment=Qt.AlignmentFlag.AlignHCenter)
 
         # Footer
-        footer = QLabel("Powered by Place Holder")
+        footer= QLabel("Powered by Place Holder")
         footer.setStyleSheet("color: #888; font-size: 12px; margin-top: 40px;")
-        left_layout.addWidget(footer, alignment=Qt.AlignmentFlag.AlignRight)
+        footer.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        left_layout.addWidget(footer)
 
         # Partie droite (image)
         right_frame = QFrame()
-        right_frame.setStyleSheet("background: #888;")
         right_frame.setMinimumWidth(300)
         right_layout = QVBoxLayout(right_frame)
         right_layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        img_label = QLabel("IMAGE")
-        img_label.setFont(QFont("Arial", 24, QFont.Weight.Bold))
-        img_label.setStyleSheet("color: #222;")
+        img_label = QLabel()
+        pixmap = QPixmap("img/mt_banner_" + str(self.rand_banner) + ".png")
+        pixmap = pixmap.scaled(300, 580, Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation)
+        img_label.setPixmap(pixmap)
+        img_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         right_layout.addWidget(img_label)
 
         # Ajout au layout principal
         main_layout.addWidget(left_frame, stretch=3)
         main_layout.addWidget(right_frame, stretch=2)
 
+    # Gère la sélection du rôle
     def select_role(self, role):
         self.selected_role = role
         for r, btn in self.role_buttons.items():
@@ -203,6 +243,7 @@ class LoginWindow(QWidget):
             self.pass_label.show()
             self.pass_input.show()
 
+    # Connecte l'utilisateur
     def try_login(self):
         username = self.user_input.text()
         password = self.pass_input.text()
@@ -211,7 +252,6 @@ class LoginWindow(QWidget):
         c = conn.cursor()
         c.execute("SELECT * FROM users WHERE username=? AND password=? AND role=?", (username, password, role))
         user = c.fetchone()
-        conn.close()
         if user:
             if role == "Gérant":
                 # Vérifie si c'est la première connexion
@@ -219,7 +259,6 @@ class LoginWindow(QWidget):
                 c = conn.cursor()
                 c.execute("SELECT first_login FROM users WHERE username=?", (username,))
                 first_login = c.fetchone()[0]
-                conn.close()
                 if first_login:
                     # Récupère l'id du gérant
                     conn = sqlite3.connect("market_tracer.db")
@@ -234,7 +273,6 @@ class LoginWindow(QWidget):
                     c = conn.cursor()
                     c.execute("UPDATE users SET first_login=0 WHERE username=?", (username,))
                     conn.commit()
-                    conn.close()
                 else:
                     self.open_admin_window()
             elif role == "Employé":
@@ -242,16 +280,39 @@ class LoginWindow(QWidget):
             self.close()
         else:
             self.error_label.setText("Nom d'utilisateur, mot de passe ou rôle incorrect.")
+        conn.close()
 
+    # Lance la fenêtre client
     def enter_as_client(self):
         print("Entrée en tant que client.")
         self.open_client_window()
         self.close()
 
+    # Ouvre la fenêtre de sélection de magasin pour le client
     def open_client_window(self):
-        self.client_window = CustomerWindow()
-        self.client_window.show()
+        dlg = ShopSelectorDialog(self)
+        nb_shops = c.fetchone()[0]
+        if dlg.exec() and dlg.selected_shop_id :
+            shop_id = dlg.selected_shop_id
+            conn = sqlite3.connect("market_tracer.db")
+            c = conn.cursor()
+            c.execute("SELECT articles_json FROM shops WHERE id=?", (shop_id,))
+            result = c.fetchone()
+            conn.close()
+            articles_json = result[0] if result else None
+            self.client_window = CustomerWindow(articles_json)
+            self.client_window.show()
+        else:
+            # Aucun magasin disponible ou aucun magasin sélectionné
+            conn = sqlite3.connect("market_tracer.db")
+            c = conn.cursor()
+            c.execute("SELECT COUNT(*) FROM shops")
+            nb_shops = c.fetchone()[0]
+            conn.close()
+            if nb_shops == 0:
+                QMessageBox.warning(self, "Aucun magasin", "Aucun magasin n'est disponible pour les clients.")
 
+    # Ouvre la fenêtre d'administration pour le gérant
     def open_admin_window(self):
         # Récupère l'id du gérant connecté
         conn = sqlite3.connect("market_tracer.db")
@@ -262,6 +323,7 @@ class LoginWindow(QWidget):
         self.admin_window = AdminWindow(user_id)
         self.admin_window.show()
     
+    # Ouvre la fenêtre employé
     def open_employee_window(self):
         self.employee_window = EmployeeWindow()
         self.employee_window.show()
