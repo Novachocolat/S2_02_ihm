@@ -1,15 +1,12 @@
 # ==============================================================
 
 # Market Tracer - Page de connexion
-# Développée par L. Pace--Boulnois et D. Melocco
-# Dernière modification : 12/06/2025
+# Développée par Lysandre Pace--Boulnois et David Melocco
+# Dernière modification : 13/06/2025
 
 # ==============================================================
 
 # Importations
-import sys
-import random as rand
-import sqlite3
 from PyQt6.QtWidgets import (
     QApplication, QWidget, QLabel, QLineEdit, QPushButton, QHBoxLayout,
     QVBoxLayout, QGridLayout, QFrame, QMessageBox
@@ -21,11 +18,12 @@ from employeeWindow import EmployeeWindow
 from customerWindow import CustomerWindow
 from createShopWindow import CreateShopWindow
 from shopSelectorDialog import ShopSelectorDialog
-
-# ==============================================================
-# Création de la base de données et des tables
+import sys
+import sqlite3
+import random as rand
 
 def init_db():
+    """Initialise la base de données et crée les tables nécessaires."""
     with sqlite3.connect("market_tracer.db") as conn:
         c = conn.cursor()
         c.execute('''
@@ -68,10 +66,12 @@ def init_db():
         c.execute("INSERT OR IGNORE INTO users (username, password, role) VALUES ('employe', 'abcd', 'Employé')")
         conn.commit()
 
-# ==============================================================
-# Page de connexion
-
 class LoginWindow(QWidget):
+    """Fenêtre de connexion pour l'application Market Tracer.
+
+    Args:
+        QWidget (QWidget): classe de base pour les widgets de l'interface utilisateur.
+    """
     def __init__(self):
         super().__init__()
         self.setWindowTitle("Market Tracer - Connexion")
@@ -81,8 +81,8 @@ class LoginWindow(QWidget):
         self.rand_banner = rand.randrange(1, 6)
         self.setup_ui()
 
-    # Initialise l'interface utilisateur de la fenêtre de connexion
     def setup_ui(self):
+        """Configure l'interface utilisateur de la fenêtre de connexion."""
         # Layout principal horizontal
         main_layout = QHBoxLayout(self)
         main_layout.setContentsMargins(10, 10, 10, 10)
@@ -137,6 +137,7 @@ class LoginWindow(QWidget):
         # Formulaire
         form_layout = QGridLayout()
         form_layout.setVerticalSpacing(15)
+
         # Nom d'utilisateur
         self.user_label = QLabel("Nom d'utilisateur")
         self.user_label.setFont(QFont("Arial", 10, QFont.Weight.Bold))
@@ -144,6 +145,7 @@ class LoginWindow(QWidget):
         self.user_input.setMaximumWidth(310)
         self.user_input.setPlaceholderText("Entrez votre nom d'utilisateur")
         self.user_input.setStyleSheet("background: #bdbdbd; border-radius: 4px; padding: 6px; color: #222;")
+
         # Mot de passe
         self.pass_label = QLabel("Mot de passe")
         self.pass_label.setFont(QFont("Arial", 10, QFont.Weight.Bold))
@@ -152,6 +154,7 @@ class LoginWindow(QWidget):
         self.pass_input.setPlaceholderText("Entrez votre mot-de-passe")
         self.pass_input.setEchoMode(QLineEdit.EchoMode.Password)
         self.pass_input.setStyleSheet("background: #bdbdbd; border-radius: 4px; padding: 6px; color: #222;")
+
         # Ajout au layout
         form_layout.addWidget(self.user_label, 0, 0)
         form_layout.addWidget(self.user_input, 1, 0)
@@ -222,8 +225,12 @@ class LoginWindow(QWidget):
         main_layout.addWidget(left_frame, stretch=3)
         main_layout.addWidget(right_frame, stretch=2)
 
-    # Gère la sélection du rôle
     def select_role(self, role):
+        """Sélectionne le rôle de l'utilisateur et met à jour l'interface en conséquence.
+
+        Args:
+            role (str): rôle sélectionné par l'utilisateur (Gérant, Employé, Client).
+        """
         self.selected_role = role
         for r, btn in self.role_buttons.items():
             btn.setChecked(r == role)
@@ -242,8 +249,8 @@ class LoginWindow(QWidget):
             self.pass_label.show()
             self.pass_input.show()
 
-    # Connecte l'utilisateur
     def try_login(self):
+        """Tente de connecter l'utilisateur en fonction des informations saisies."""
         username = self.user_input.text()
         password = self.pass_input.text()
         role = self.selected_role
@@ -280,13 +287,13 @@ class LoginWindow(QWidget):
             else:
                 self.error_label.setText("Nom d'utilisateur, mot de passe ou rôle incorrect.")
 
-    # Lance la fenêtre client
     def enter_as_client(self):
+        """Permet à l'utilisateur d'entrer en tant que client sans connexion."""
         self.open_client_window()
         self.close()
 
-    # Ouvre la fenêtre de sélection de magasin pour le client
     def open_client_window(self):
+        """Ouvre la fenêtre client pour sélectionner un magasin et afficher les articles."""
         with sqlite3.connect("market_tracer.db") as conn:
             c = conn.cursor()
             c.execute("SELECT COUNT(*) FROM shops")
@@ -305,13 +312,17 @@ class LoginWindow(QWidget):
             self.client_window = CustomerWindow(articles_json, shop_id)
             self.client_window.show()
 
-    # Ouvre la fenêtre d'administration pour le gérant
     def open_admin_window(self, user_id):
+        """Ouvre la fenêtre d'administration pour le gérant.
+
+        Args:
+            user_id (int): ID de l'utilisateur gérant connecté.
+        """
         self.admin_window = AdminWindow(user_id)
         self.admin_window.show()
 
-    # Ouvre la fenêtre employé
     def open_employee_window(self):
+        """Ouvre la fenêtre d'administration pour l'employé."""
         self.employee_window = EmployeeWindow()
         self.employee_window.show()
 
