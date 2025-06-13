@@ -335,7 +335,7 @@ class AdminWindow(QWidget):
             for categorie, produits in data.items():
                 self.categories.add(categorie)
                 for produit in produits:
-                    text = f"{categorie}::{produit}"
+                    text = f"{categorie}--->{produit}"
                     self.stocks_list.addItem(text)
                     self.produit_categorie_map[text] = categorie
             self.filtre_combo.blockSignals(True)

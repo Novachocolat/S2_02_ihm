@@ -124,6 +124,16 @@ class EmployeeWindow(QWidget):
         
         left_col.addWidget(btn_ajouter)
         left_col.addWidget(btn_retirer)
+        
+        search_label = QLabel("Rechercher")
+        search_label.setFont(QFont("Arial", 10, QFont.Weight.Bold))
+        left_col.addWidget(search_label)
+        
+        # Barre de recherche
+        self.search_input = QLineEdit()
+        self.search_input.setPlaceholderText("Rechercher un article...")
+        self.search_input.textChanged.connect(self.rechercher_stocks)
+        left_col.addWidget(self.search_input)
 
         # Filtre par catégorie
         filtre_label = QLabel("Filtre")
@@ -321,6 +331,15 @@ class EmployeeWindow(QWidget):
                 if cat == categorie:
                     self.stocks_list.addItem(produit)
 
+    # Recherche stocks
+    def rechercher_stocks(self, texte):
+        texte = texte.lower()
+        categorie = self.filtre_combo.currentText()
+        self.stocks_list.clear()
+        for produit, cat in self.produit_categorie_map.items():
+            if (categorie == "Toutes les catégories" or cat == categorie) and texte in produit.lower():
+                self.stocks_list.addItem(produit)
+                
     # Déconnecte l'utilisateur et retourne à la fenêtre de connexion
     def deconnexion(self):
         print("[EmployeeWindow] Déconnexion demandée")
