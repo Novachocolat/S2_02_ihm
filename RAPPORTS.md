@@ -50,5 +50,6 @@ Historique des avancés de projet.
 | 14/06/2025 | David            | Documentation, corrections majeures et découpage MVC ! |
 | 14/06/2025 | David            | Documentation, implémentation de l'algorithme |
 | 14/06/2025 | David            | Refonte de la page d'aide |
+| 14/06/2025 | David            | Correction d'une seule faute d'orthographe qui a tout fait foiré, j'ai envie de pleurer |
 
 # ⬅️ [Retour](https://github.com/Novachocolat/S2_02_ihm/blob/main/README.md)
