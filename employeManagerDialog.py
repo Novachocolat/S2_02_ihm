@@ -8,7 +8,7 @@ import sqlite3
 from PyQt6.QtWidgets import QDialog, QVBoxLayout, QListWidget, QHBoxLayout, QPushButton, QMessageBox
 from employeEditDialog import EmployeEditDialog
 
-class EmployeeManagerDialog(QDialog):
+class EmployeManagerDialog(QDialog):
     """Boîte de dialogue pour gérer les employés d'une boutique."""
     def __init__(self, shop_id, parent=None):
         """Initialise la boîte de dialogue pour gérer les employés d'une boutique."""

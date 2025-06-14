@@ -71,8 +71,8 @@ class LoginController:
             elif role == "Employé":
                 shop_id = user[4]
                 if shop_id:
-                    self.employee_window = CustomerController("json/liste_produits.json", shop_id, "Employé")
-                    self.employee_window.view.show()
+                    self.employe_window = CustomerController("json/liste_produits.json", shop_id, "Employé")
+                    self.employe_window.view.show()
                     self.view.close()
                 else:
                     QMessageBox.warning(self.view, "Erreur", "Aucun magasin associé à ce compte employé.")
