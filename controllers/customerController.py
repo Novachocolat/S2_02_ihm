@@ -12,12 +12,14 @@ from views.customerView import CustomerView
 
 class CustomerController:
     """Contrôleur pour la fenêtre du client"""
-    def __init__(self, articles_json_path, shop_id):
+    def __init__(self, articles_json_path, shop_id, role="Client"):
         """Initialise le contrôleur du client."""
         self.view = CustomerView()
         self.liste_courses = []
         self.articles_json_path = "json/liste_produits.json" # TODO: Choisir un chemin vers une liste de produits personnalisée.
         self.shop_id = shop_id
+        self.role = role
+        self.view.setWindowTitle(f"Market Tracer - {self.role}")
 
         # Connexion des signaux
         self.view.btn_ajouter.clicked.connect(self.ajouter_article)
@@ -28,8 +30,9 @@ class CustomerController:
         self.view.filtre_combo.currentTextChanged.connect(self.view.filtrer_produits)
         self.view.search_input.textChanged.connect(self.view.rechercher_produits)
         self.view.btn_generer.clicked.connect(self.generer_parcours)
-        self.view.btn_exporter_parcours.clicked.connect(self.exporter_parcours)
         self.view.btn_deconnexion.clicked.connect(self.deconnexion)
+        self.view.menubar.actions()[0].menu().actions()[0].triggered.connect(self.exporter_liste)
+        self.view.menubar.actions()[0].menu().actions()[1].triggered.connect(self.importer_liste)
         self.view.menubar.actions()[1].menu().actions()[0].triggered.connect(self.open_about)
         self.view.menubar.actions()[1].menu().actions()[1].triggered.connect(self.open_help)
         self.view.menubar.actions()[1].menu().actions()[2].triggered.connect(self.open_licence)
@@ -99,12 +102,78 @@ class CustomerController:
             self.view.status_bar.setText("Liste importée.")
 
     def generer_parcours(self):
-        """Génère un parcours optimal dans le magasin en fonction de la liste de courses."""
-        # TODO: Implémenter la logique de génération de parcours
+        """Génère le parcours optimisé pour la liste de courses."""
+        import os
+        import sys
+        import importlib.util
 
-    def exporter_parcours(self):
-        """Exporte le parcours généré."""
-        # TODO: Implémenter l'export du parcours
+        if not self.liste_courses:
+            QMessageBox.warning(self.view, "Avertissement", "La liste de courses est vide.")
+            return
+
+        # Import dynamique de l'algorithme pour éviter les problèmes de dépendances
+        algo_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'algorithm.py'))
+        spec = importlib.util.spec_from_file_location("algorithm", algo_path)
+        algorithm = importlib.util.module_from_spec(spec)
+        sys.modules["algorithm"] = algorithm
+        spec.loader.exec_module(algorithm)
+
+        # Récupère le chemin du plan du magasin depuis la base de données
+        from models.adminModel import get_shop_data
+        shop_data = get_shop_data(self.shop_id)
+        plan_path = shop_data[1] if shop_data and len(shop_data) > 2 else ""
+        if not plan_path or not os.path.exists(plan_path):
+            QMessageBox.warning(self.view, "Erreur", "Plan du magasin introuvable.")
+            return
+
+        # Charge le plan et la liste de courses
+        with open(plan_path, "r", encoding="latin-1") as f:
+            data = algorithm.json.load(f)
+        cells = data["cells"]
+        grid, entry, caisses = algorithm.load_grid_from_json(plan_path)
+
+        # Vérifie si l'utilisateur a le droit d'accéder aux stocks ou seulement aux rayons
+        if self.role == "Employé":
+            allowed_types = ("Rayon", "Stock")
+        else:
+            allowed_types = ("Rayon",)
+
+        # 1. Trouver les coordonnées des articles de la liste
+        shopping_points = algorithm.find_shopping_points(cells, self.liste_courses, grid, allowed_types)
+        if not shopping_points:
+            QMessageBox.warning(self.view, "Erreur", "Aucun article de la liste trouvé dans le plan.")
+            return
+
+        # 2. Trouver l'ordre optimal (brute force si peu d'articles)
+        if len(shopping_points) <= 5:
+            ordered_points = algorithm.brute_force(entry, shopping_points)[1:]  # sans le départ
+        else:
+            ordered_points = []
+            current = entry
+            remaining = shopping_points.copy()
+            while remaining:
+                next_point = min(remaining, key=lambda p: algorithm.calculate_heuristic(current, p))
+                ordered_points.append(next_point)
+                remaining.remove(next_point)
+                current = next_point
+
+        # 3. Ajouter la caisse la plus proche à la fin
+        last_point = ordered_points[-1] if ordered_points else entry
+        nearest_accessible_caisse = algorithm.find_nearest_accessible_caisse(grid, last_point, caisses)
+        if nearest_accessible_caisse is None:
+            QMessageBox.warning(self.view, "Erreur", "Aucune caisse accessible trouvée.")
+            return
+        full_points = [entry] + ordered_points + [nearest_accessible_caisse]
+
+        # 4. Calculer le chemin complet
+        full_path = algorithm.find_full_path(grid, full_points)
+
+        if full_path:
+            total_distance = algorithm.calculate_total_distance(full_path)
+            self.view.status_bar.setText(f"Parcours généré ({len(full_path)} étapes, {total_distance:.2f} m).")
+            algorithm.visualize_path(grid, full_path, full_points, cells)
+        else:
+            QMessageBox.warning(self.view, "Erreur", "Aucun chemin trouvé pour cette liste.")
 
     def deconnexion(self):
         """Déconnecte l'utilisateur et ouvre la fenêtre de connexion."""

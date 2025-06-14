@@ -1,7 +1,7 @@
 # ==============================================================
-# Vue pour la fenêtre client
+# Vue pour la fenêtre client & employé
 # Développé par N. COLIN, D. MELOCCO
-# Dernière modification : 13/06/2025
+# Dernière modification : 14/06/2025
 # ==============================================================
 
 from PyQt6.QtWidgets import (
@@ -17,7 +17,7 @@ class CustomerView(QWidget):
     def __init__(self):
         """Initialise la vue client."""
         super().__init__()
-        self.setWindowTitle("Market Tracer - Client")
+        self.setWindowTitle("Market Tracer - Client & Employé")
         self.setWindowIcon(QIcon("img/logo_v1.png"))
         self.setMinimumSize(1280, 768)
         self.categories = set() # Ensemble pour stocker les catégories de produits
@@ -33,8 +33,8 @@ class CustomerView(QWidget):
         # Barre de menu
         self.menubar = QMenuBar()
         self.fichier_menu = self.menubar.addMenu("Fichier")
+        self.action_exporter = self.fichier_menu.addAction("Exporter ma liste")
         self.action_importer = self.fichier_menu.addAction("Importer une liste")
-        self.action_exporter = self.fichier_menu.addAction("Exporter la liste")
 
         self.aide_menu = self.menubar.addMenu("Aide")
         self.action_about = self.aide_menu.addAction("À propos")
@@ -136,7 +136,8 @@ class CustomerView(QWidget):
         plan_label.setFont(QFont("Arial", 12, QFont.Weight.Bold))
         plan_col.addWidget(plan_label)
         self.grid_overlay = GridOverlay()
-        self.grid_overlay.setEnabled(False)
+        self.grid_overlay.set_pan_mode(True)
+        self.grid_overlay.setInteractive(False)
         plan_col.addWidget(self.grid_overlay, stretch=1)
         plan_col.addStretch()
         plan_widget = QWidget()
@@ -178,9 +179,6 @@ class CustomerView(QWidget):
         self.btn_generer = QPushButton("Générer le parcours")
         self.btn_generer.setMinimumHeight(25)
         parcours_layout.addWidget(self.btn_generer)
-        self.btn_exporter_parcours = QPushButton("Exporter le parcours")
-        self.btn_exporter_parcours.setMinimumHeight(25)
-        parcours_layout.addWidget(self.btn_exporter_parcours)
         parcours_box.setLayout(parcours_layout)
         right_col.addWidget(parcours_box)
 

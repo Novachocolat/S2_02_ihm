@@ -1,18 +1,17 @@
 # ==============================================================
-#
-# Market Tracer - Boîte de gestion des employés
-# Développé par Lysandre Pace--Boulnois
-# Dernière modification : 12/06/2025
-#
+# Dialogue de gestion des employés
+# Développé par L. PACE--BOULNOIS
+# Dernière modification : 14/06/2025
 # ==============================================================
 
 import sqlite3
 from PyQt6.QtWidgets import QDialog, QVBoxLayout, QListWidget, QHBoxLayout, QPushButton, QMessageBox
-from employeeEditDialog import EmployeeEditDialog
+from employeEditDialog import EmployeEditDialog
 
 class EmployeeManagerDialog(QDialog):
+    """Boîte de dialogue pour gérer les employés d'une boutique."""
     def __init__(self, shop_id, parent=None):
-        # Constructeur de la boîte de gestion des employés
+        """Initialise la boîte de dialogue pour gérer les employés d'une boutique."""
         super().__init__(parent)
         self.setWindowTitle("Gérer les employés")
         self.setMinimumWidth(400)
@@ -23,6 +22,7 @@ class EmployeeManagerDialog(QDialog):
         self.list = QListWidget()
         layout.addWidget(self.list)
 
+        # Création des boutons pour ajouter, modifier et supprimer des employés
         btns = QHBoxLayout()
         self.btn_add = QPushButton("Ajouter")
         self.btn_edit = QPushButton("Modifier")
@@ -32,6 +32,7 @@ class EmployeeManagerDialog(QDialog):
         btns.addWidget(self.btn_del)
         layout.addLayout(btns)
 
+        # Connexion des boutons aux méthodes correspondantes
         self.btn_add.clicked.connect(self.add_employee)
         self.btn_edit.clicked.connect(self.edit_employee)
         self.btn_del.clicked.connect(self.delete_employee)
@@ -39,7 +40,7 @@ class EmployeeManagerDialog(QDialog):
         self.refresh()
 
     def refresh(self):
-        # Rafraîchit la liste des employés affichés
+        """Rafraîchit la liste des employés de la boutique."""
         self.list.clear()
         conn = sqlite3.connect("market_tracer.db")
         c = conn.cursor()
@@ -49,8 +50,8 @@ class EmployeeManagerDialog(QDialog):
         conn.close()
 
     def add_employee(self):
-        # Ajoute un nouvel employé à la base de données
-        dialog = EmployeeEditDialog(parent=self)
+        """Ajoute un nouvel employé à la boutique."""
+        dialog = EmployeEditDialog(parent=self)
         if dialog.exec():
             username, password = dialog.get_data()
             conn = sqlite3.connect("market_tracer.db")
@@ -61,13 +62,13 @@ class EmployeeManagerDialog(QDialog):
             self.refresh()
 
     def edit_employee(self):
-        # Modifie les informations d'un employé sélectionné
+        """Modifie les informations de l'employé sélectionné."""
         item = self.list.currentItem()
         if not item:
             QMessageBox.warning(self, "Sélection", "Sélectionnez un employé à modifier.")
             return
         emp_id = int(item.text().split(" - ")[0])
-        dialog = EmployeeEditDialog(parent=self)
+        dialog = EmployeEditDialog(parent=self)
         if dialog.exec():
             username, password = dialog.get_data()
             conn = sqlite3.connect("market_tracer.db")
@@ -78,7 +79,7 @@ class EmployeeManagerDialog(QDialog):
             self.refresh()
 
     def delete_employee(self):
-        # Supprime l'employé sélectionné de la base de données
+        """Supprime l'employé sélectionné de la boutique."""
         item = self.list.currentItem()
         if not item:
             QMessageBox.warning(self, "Sélection", "Sélectionnez un employé à supprimer.")

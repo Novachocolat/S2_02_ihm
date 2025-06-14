@@ -184,11 +184,7 @@ class GridOverlay(QGraphicsView):
         self.current_color_type = color_type
 
     def color_cell_at_position(self, scene_pos):
-        """Colore une cellule à la position donnée dans la scène.
-
-        Args:
-            scene_pos (dict): position de la souris dans la scène.
-        """
+        """Colore une cellule à la position donnée dans la scène."""
         x, y = scene_pos.x(), scene_pos.y()
 
         # Empêcher de colorier hors du plan
@@ -231,11 +227,7 @@ class GridOverlay(QGraphicsView):
 
     # Drag & Drop
     def mousePressEvent(self, event):
-        """Gère l'appui de la souris pour le déplacement ou la peinture.
-
-        Args:
-            event (func): événement de la souris.
-        """
+        """Gère l'appui de la souris pour le déplacement ou la peinture."""
         if not self.image_item:
             return
 
@@ -251,11 +243,7 @@ class GridOverlay(QGraphicsView):
                 self.color_cell_at_position(scene_pos)
 
     def mouseMoveEvent(self, event):
-        """Gère le mouvement de la souris pour afficher des informations sur les cellules ou peindre.
-
-        Args:
-            event (func): événement de la souris.
-        """
+        """Gère le mouvement de la souris pour afficher des informations sur les cellules ou peindre."""
         scene_pos = self.mapToScene(event.pos())
         col = int(scene_pos.x() // self.grid_size)
         row = int(scene_pos.y() // self.grid_size)
@@ -281,11 +269,7 @@ class GridOverlay(QGraphicsView):
                 QToolTip.hideText()
 
     def mouseReleaseEvent(self, event):
-        """Gère le relâchement de la souris pour arrêter le déplacement ou la peinture.
-
-        Args:
-            event (func): événement de la souris.
-        """
+        """Gère le relâchement de la souris pour arrêter le déplacement ou la peinture."""
         if self.is_panning:
             self.setCursor(Qt.CursorShape.OpenHandCursor)
             self.last_pan_point = None
@@ -293,27 +277,15 @@ class GridOverlay(QGraphicsView):
             self.is_painting = False
 
     def dragEnterEvent(self, event):
-        """Gère l'entrée d'un objet dans la vue pour le drag & drop.
-
-        Args:
-            event (func): événement de drag.
-        """
+        """Gère l'entrée d'un objet dans la vue pour le drag & drop."""
         event.accept()
 
     def dragMoveEvent(self, event):
-        """Gère le mouvement d'un objet pendant le drag & drop.
-
-        Args:
-            event (func): événement de drag.
-        """
+        """Gère le mouvement d'un objet pendant le drag & drop."""
         event.accept()
 
     def dropEvent(self, event):
-        """Gère le dépôt d'un objet dans la vue pour le drag & drop.
-
-        Args:
-            event (func): événement de drag.
-        """
+        """Gère le dépôt d'un objet dans la vue pour le drag & drop."""
         if not self.image_item:
             return
 
@@ -456,12 +428,9 @@ class GridOverlay(QGraphicsView):
 # Liste déroulante avec drag & drop
 # ==============================================================
 class DraggableListWidget(QListWidget):
-    """Liste déroulante avec des éléments pouvant être glissés et déposés.
-
-    Args:
-        QListWidget (QListWidget): classe PyQt6 pour la liste déroulante.
-    """
+    """Liste déroulante avec des éléments pouvant être glissés et déposés."""
     def startDrag(self, supportedActions):
+        """Démarre le drag & drop de l'élément sélectionné."""
         item = self.currentItem()
         if not item:
             return
@@ -627,6 +596,6 @@ class MainWindow(QMainWindow):
 if __name__ == "__main__":
     app = QApplication(sys.argv)
     win = MainWindow()
-    win.resize(1200, 700)
+    win.resize(1200, 768)
     win.show()
     sys.exit(app.exec())

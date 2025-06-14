@@ -43,10 +43,12 @@ Historique des avancés de projet.
 | 12/06/2025 | Simon            | Mise à jour du rapport |
 | 13/06/2025 | David            | Refonte de la page de configuration d'un magasin |
 | 13/06/2025 | David, Lysandre, Noé, Simon | Grosses corrections et documentation du code en entier |
-| 13/06/2025 | Noé, Simon | Modifications visuelles mineures |
-| 13/06/2025 | Noé, Simon | Rédaction de la documentation utilisateur |
-| 13/06/2025 | David | Première version de l'algorithme A* |
-| 13/06/2025 | David, Simon | Quadrillage avec stockage et tooltips, corrections mineures |
-| 14/06/2025 | David | Documentation, corrections majeures et découpage MVC ! |
+| 13/06/2025 | Noé, Simon       | Modifications visuelles mineures |
+| 13/06/2025 | Noé, Simon       | Rédaction de la documentation utilisateur |
+| 13/06/2025 | David            | Première version de l'algorithme A* |
+| 13/06/2025 | David, Simon     | Quadrillage avec stockage et tooltips, corrections mineures |
+| 14/06/2025 | David            | Documentation, corrections majeures et découpage MVC ! |
+| 14/06/2025 | David            | Documentation, implémentation de l'algorithme |
+| 14/06/2025 | David            | Refonte de la page d'aide |
 
 # ⬅️ [Retour](https://github.com/Novachocolat/S2_02_ihm/blob/main/README.md)

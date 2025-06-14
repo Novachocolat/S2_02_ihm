@@ -13,7 +13,7 @@ from views.adminView import AdminView
 
 from addArticleDialog import AddArticleDialog
 from shopManagerDialog import ShopManagerDialog
-from employeeManagerDialog import EmployeeManagerDialog
+from employeManagerDialog import EmployeManagerDialog
 import json
 import os
 
@@ -56,7 +56,6 @@ class AdminController:
             (self.view.btn_stock, 'Stock'),
             (self.view.btn_caisse, 'Caisse'),
             (self.view.btn_entree, 'Entrée'),
-            (self.view.btn_sortie, 'Sortie'),
             (self.view.btn_supprimer, 'Gomme')
         ]:
             btn.clicked.connect(lambda checked, c=color: self.set_plan_mode(c))
@@ -101,9 +100,6 @@ class AdminController:
             self.view.grid_overlay.set_pan_mode(False)
         elif mode == 'Entrée':
             self.view.grid_overlay.set_current_color('Entrée')
-            self.view.grid_overlay.set_pan_mode(False)
-        elif mode == 'Sortie':
-            self.view.grid_overlay.set_current_color('Sortie')
             self.view.grid_overlay.set_pan_mode(False)
         elif mode == 'Gomme':
             self.view.grid_overlay.set_current_color('Gomme')
@@ -234,7 +230,7 @@ class AdminController:
         """Ouvre la fenêtre de gestion des employés."""
         shop_id = get_employees_shop_id(self.user_id)
         if shop_id:
-            dlg = EmployeeManagerDialog(shop_id, self.view)
+            dlg = EmployeManagerDialog(shop_id, self.view)
             dlg.exec()
         else:
             QMessageBox.warning(self.view, "Erreur", "Aucun magasin associé à ce compte.")

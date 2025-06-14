@@ -45,6 +45,7 @@ class LoginController:
     def try_login(self):
         """Tente de connecter l'utilisateur en fonction des informations saisies."""
         from configureWindow import ConfigureWindow
+        from controllers.customerController import CustomerController
         username = self.view.user_input.text()
         password = self.view.pass_input.text()
 
@@ -70,14 +71,9 @@ class LoginController:
             elif role == "Employé":
                 shop_id = user[4]
                 if shop_id:
-                    shop_info = get_shop_info(shop_id)
-                    if shop_info:
-                        articles_json, plan_path = shop_info
-                        self.employee_window = EmployeeWindow(articles_json, plan_path) # TODO: À corriger
-                        self.employee_window.show()
-                        self.view.close()
-                    else:
-                        QMessageBox.warning(self.view, "Erreur", "Aucun magasin associé à ce compte employé.")
+                    self.employee_window = CustomerController("json/liste_produits.json", shop_id, "Employé")
+                    self.employee_window.view.show()
+                    self.view.close()
                 else:
                     QMessageBox.warning(self.view, "Erreur", "Aucun magasin associé à ce compte employé.")
             self.view.close()
@@ -99,7 +95,7 @@ class LoginController:
             return
         dlg = ShopSelectorDialog(self.view)
         if dlg.exec() and dlg.selected_shop_id:
-            self.client_window = CustomerController("json/liste_produits.json", dlg.selected_shop_id)
+            self.client_window = CustomerController("json/liste_produits.json", dlg.selected_shop_id, "Client")
             self.client_window.view.show()
 
     def open_admin_window(self, user_id):

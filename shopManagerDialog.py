@@ -1,30 +1,28 @@
 # ==============================================================
-#
-# Market Tracer - Boîte de gestion des magasins
-# Développé par Lysandre Pace--Boulnois
-# Dernière modification : 12/06/2025
-#
+# Dialog de gestion des magasins
+# Développé par L. PACE--BOULNOIS
+# Dernière modification : 14/06/2025
 # ==============================================================
 
-# Importations
 import sqlite3
-from PyQt6.QtWidgets import QDialog, QVBoxLayout, QListWidget, QHBoxLayout, QPushButton, QMessageBox
+from PyQt6.QtWidgets import (
+    QDialog, QVBoxLayout, QListWidget, QHBoxLayout, QPushButton, QMessageBox
+)
 
-# ==============================================================
-# Boîte de dialogue pour la gestion des magasins
-# ==============================================================
 class ShopManagerDialog(QDialog):
-    # Constructeur de la boîte de gestion des magasins
+    """Boîte de dialogue pour gérer les magasins de l'utilisateur."""
     def __init__(self, user_id, parent=None):
+        """Initialise la boîte de dialogue pour gérer les magasins."""
         super().__init__(parent)
         self.setWindowTitle("Mes magasins")
-        self.setMinimumWidth(400)
+        self.setFixedSize(400, 300)
         self.user_id = user_id
 
         layout = QVBoxLayout(self)
         self.list = QListWidget()
         layout.addWidget(self.list)
 
+        # Création des boutons pour gérer les magasins
         btns = QHBoxLayout()
         self.btn_create = QPushButton("Créer")
         self.btn_load = QPushButton("Charger")
@@ -36,6 +34,7 @@ class ShopManagerDialog(QDialog):
         btns.addWidget(self.btn_del)
         layout.addLayout(btns)
 
+        # Connexion des boutons aux méthodes correspondantes
         self.btn_create.clicked.connect(self.create_shop)
         self.btn_load.clicked.connect(self.load_shop)
         self.btn_edit.clicked.connect(self.edit_shop)
@@ -43,8 +42,8 @@ class ShopManagerDialog(QDialog):
 
         self.refresh()
 
-    # Rafraîchit la liste des magasins
     def refresh(self):
+        """Rafraîchit la liste des magasins de l'utilisateur."""
         self.list.clear()
         conn = sqlite3.connect("market_tracer.db")
         c = conn.cursor()
@@ -53,32 +52,32 @@ class ShopManagerDialog(QDialog):
             self.list.addItem(f"{shop_id} - {nom}")
         conn.close()
 
-    # Récupère l'identifiant du magasin sélectionné
     def get_selected_shop_id(self):
+        """Retourne l'ID du magasin sélectionné dans la liste."""
         item = self.list.currentItem()
         if not item:
             return None
         return int(item.text().split(" - ")[0])
 
-    # Crée un nouveau magasin
     def create_shop(self):
-        from configureWindow import CreateShopWindow
-        dlg = CreateShopWindow(self.user_id, self)
+        """Ouvre une fenêtre pour créer un nouveau magasin."""
+        from configureWindow import ConfigureWindow
+        dlg = ConfigureWindow(self.user_id, self)
         dlg.exec()
         self.refresh()
 
-    # Charge le magasin sélectionné
     def load_shop(self):
+        """Charge le magasin sélectionné et ferme la boîte de dialogue."""
         shop_id = self.get_selected_shop_id()
         if shop_id:
             self.accept()
             self.selected_shop_id = shop_id
 
-    # Modifie le magasin sélectionné
     def edit_shop(self):
+        """Ouvre une fenêtre pour modifier le magasin sélectionné."""
         shop_id = self.get_selected_shop_id()
         if shop_id:
-            from configureWindow import CreateShopWindow
+            from configureWindow import ConfigureWindow
             conn = sqlite3.connect("market_tracer.db")
             c = conn.cursor()
             c.execute("SELECT nom, auteur, date_creation, apropos, chemin, articles_json FROM shops WHERE id=?", (shop_id,))
@@ -93,12 +92,12 @@ class ShopManagerDialog(QDialog):
                     "chemin": row[4],
                     "articles_json": row[5]
                 }
-                dlg = CreateShopWindow(self.user_id, self, shop_data)
+                dlg = ConfigureWindow(self.user_id, self)
                 dlg.exec()
                 self.refresh()
 
-    # Supprime le magasin sélectionné
     def delete_shop(self):
+        """Supprime le magasin sélectionné après confirmation."""
         shop_id = self.get_selected_shop_id()
         if shop_id:
             reply = QMessageBox.question(self, "Confirmation", "Supprimer ce magasin ?", QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No)
