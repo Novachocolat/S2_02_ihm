@@ -2,16 +2,15 @@
 # Fichier principal de l'application
 # Développé par D. MELOCCO
 # Dernière modification : 13/06/2025
+# Lancement : python main.py
 # ===============================================================
 
-from PyQt6.QtWidgets import QApplication
 import sys
-from models.loginModel import init_db
-from controllers.loginController import LoginController
+from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parent / "src"))
+
+from market_tracer.app import main
 
 if __name__ == "__main__":
-    init_db()
-    app = QApplication(sys.argv)
-    controller = LoginController()
-    controller.view.show()
-    sys.exit(app.exec())
+    main()

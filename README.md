@@ -1,7 +1,7 @@
 
 *Version du 14/06/2025*
 
-![Logo](img/logo_ext_v1.png)
+![Logo](assets/img/logo_ext_v1.png)
 
 
 # Market Tracer — 1.0
@@ -29,11 +29,11 @@ Ce logiciel est utilisé par les plus grandes chaînes de magasins :
 
 ## 📄 Documentation
 
-Pour apprendre à utiliser l'application, rendez-vous ici : [Documentation](https://github.com/Novachocolat/S2_02_ihm/blob/main/DOC.md)
+Pour apprendre à utiliser l'application, rendez-vous ici : [Documentation](docs/DOC.md)
 
 
 ## ✏️ Rapports
-Pour voir les comptes-rendus des avancements par séance, rendez-vous ici : [Rapports](https://github.com/Novachocolat/S2_02_ihm/blob/main/RAPPORTS.md)
+Pour voir les comptes-rendus des avancements par séance, rendez-vous ici : [Rapports](docs/RAPPORTS.md)
 
 ## ⚙️ Fonctionnalités
 
@@ -75,7 +75,6 @@ Pour voir les comptes-rendus des avancements par séance, rendez-vous ici : [Rap
 
 * L'ajout de plusieurs magasins est malheureusement buggué.
 * L'algorithme A* fonctionne, mais cela dépend de ses envies.
-* Organisation dans des fichiers (entre fenêtres et pop-ups).
 * Rédaction d'une meilleure documentation.
 * Ajout de raccourcis clavier, de menus et de logs.
 * Améliorer la résistance de la base de données.
@@ -96,8 +95,37 @@ Choisissez un répertoire
   cd S2_02_ihm
 ```
 
-Installez la bibliothèque **PyQt6**
+Installez les dépendances (**PyQt6**, **numpy** et **matplotlib**)
 
 ```bash
-  pip install pyqt6
+  pip install -r requirements.txt
+```
+
+Lancez l'application
+
+```bash
+  python main.py
+```
+
+
+## 🗂️ Organisation du projet
+
+```
+main.py                     Lance l'application
+requirements.txt            Dépendances Python
+assets/
+    img/                    Logos et bannières
+    json/                   Liste de produits et plan d'exemple
+docs/                       Documentation et rapports
+src/market_tracer/
+    app.py                  Point d'entrée (base de données + fenêtre de connexion)
+    paths.py, constants.py  Chemins des ressources et constantes partagées
+    database.py             Connexion SQLite
+    models/                 Accès aux données (connexion, magasins, employés, listes)
+    views/                  Interfaces des fenêtres de connexion, gérant et client / employé
+    controllers/            Logique des fenêtres (relie vues et modèles)
+    dialogs/                Pop-ups (configuration, magasins, employés, article)
+    windows/                Fenêtres À propos, Aide et Licence
+    widgets/                Quadrillage du plan et liste avec glisser-déposer
+    core/                   Algorithme A* et calcul du parcours
 ```
